@@ -3,6 +3,7 @@
 // Syncs to localStorage in the browser so that state persists on refresh.
 
 import { Category, Product, Customer, Order, OrderItem, DeliveryZone, BlockedDate, BlockedHour, Notification } from '../types';
+import { generateUUID } from './uuid';
 
 const defaultCategories: Category[] = [
   {
@@ -275,7 +276,7 @@ class DBService {
     if (existingIdx > -1) {
       list[existingIdx] = cat;
     } else {
-      cat.id = cat.id || `c_${Math.random().toString(36).substr(2, 9)}`;
+      cat.id = cat.id || generateUUID();
       list.push(cat);
     }
     this.set('categories', list);
@@ -298,7 +299,7 @@ class DBService {
     if (existingIdx > -1) {
       list[existingIdx] = prod;
     } else {
-      prod.id = prod.id || `p_${Math.random().toString(36).substr(2, 9)}`;
+      prod.id = prod.id || generateUUID();
       list.push(prod);
     }
     this.set('products', list);
@@ -322,7 +323,7 @@ class DBService {
       list[existingIdx] = { ...list[existingIdx], ...cust };
       cust = list[existingIdx];
     } else {
-      cust.id = cust.id || `cust_${Math.random().toString(36).substr(2, 9)}`;
+      cust.id = cust.id || generateUUID();
       cust.created_at = cust.created_at || new Date().toISOString();
       list.push(cust);
     }
@@ -341,7 +342,7 @@ class DBService {
     if (existingIdx > -1) {
       list[existingIdx] = order;
     } else {
-      order.id = order.id || `o_${Math.random().toString(36).substr(2, 9)}`;
+      order.id = order.id || generateUUID();
       order.order_number = order.order_number || `MO-${Math.floor(1000 + Math.random() * 9000)}`;
       order.created_at = order.created_at || new Date().toISOString();
       list.push(order);
@@ -355,7 +356,7 @@ class DBService {
         this.saveCustomer(clientCust);
       } else {
         this.saveCustomer({
-          id: `cust_${Math.random().toString(36).substr(2, 9)}`,
+          id: generateUUID(),
           name: order.client_name,
           phone: order.client_phone,
           address_default: order.delivery_address,
@@ -384,7 +385,7 @@ class DBService {
     if (existingIdx > -1) {
       list[existingIdx] = zone;
     } else {
-      zone.id = zone.id || `z_${Math.random().toString(36).substr(2, 9)}`;
+      zone.id = zone.id || generateUUID();
       list.push(zone);
     }
     this.set('delivery_zones', list);
@@ -402,7 +403,7 @@ class DBService {
     if (existingIdx > -1) {
       list[existingIdx] = date;
     } else {
-      date.id = date.id || `bd_${Math.random().toString(36).substr(2, 9)}`;
+      date.id = date.id || generateUUID();
       list.push(date);
     }
     this.set('blocked_dates', list);
@@ -425,7 +426,7 @@ class DBService {
     if (existingIdx > -1) {
       list[existingIdx] = hour;
     } else {
-      hour.id = hour.id || `bh_${Math.random().toString(36).substr(2, 9)}`;
+      hour.id = hour.id || generateUUID();
       list.push(hour);
     }
     this.set('blocked_hours', list);
@@ -455,7 +456,7 @@ class DBService {
   createNotification(type: string, message: string): Notification {
     const list = this.getNotifications();
     const notif: Notification = {
-      id: `n_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateUUID(),
       type,
       message,
       read: false,

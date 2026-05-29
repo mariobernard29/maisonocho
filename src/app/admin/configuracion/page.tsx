@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, MapPin, Calendar, Clock, Phone, Plus, Trash2, Save, AlertCircle } from 'lucide-react';
 import { db } from '../../../lib/supabase';
 import { DeliveryZone, BlockedDate, BlockedHour } from '../../../types';
+import { generateUUID } from '../../../lib/uuid';
 
 export default function AdminConfiguracion() {
   const [activeTab, setActiveTab] = useState<'logistics' | 'schedule' | 'notifications'>('logistics');
@@ -86,7 +87,7 @@ export default function AdminConfiguracion() {
     setLoading(true);
     try {
       const zoneObj: DeliveryZone = {
-        id: `z_${Math.random().toString(36).substr(2, 9)}`,
+        id: generateUUID(),
         min_km: newMinKm,
         max_km: newMaxKm,
         price: newPrice,
@@ -115,7 +116,7 @@ export default function AdminConfiguracion() {
     setLoading(true);
     try {
       const dateObj: BlockedDate = {
-        id: `bd_${Math.random().toString(36).substr(2, 9)}`,
+        id: generateUUID(),
         date: newBlockedDate,
         reason: newBlockedReason.trim()
       };

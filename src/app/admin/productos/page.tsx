@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, FolderHeart, Plus, Edit2, Trash2, Eye, EyeOff, Star, AlertCircle, UploadCloud, FolderOpen } from 'lucide-react';
 import { db } from '../../../lib/supabase';
 import { Product, Category, ProductVariant } from '../../../types';
+import { generateUUID } from '../../../lib/uuid';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -139,7 +140,7 @@ export default function AdminProducts() {
     try {
       const prodSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const prodObj: Product = {
-        id: selectedProduct?.id || `p_${Math.random().toString(36).substr(2, 9)}`,
+        id: selectedProduct?.id || generateUUID(),
         category_id: categoryId,
         name: name.trim(),
         slug: prodSlug,
@@ -248,7 +249,7 @@ export default function AdminProducts() {
     try {
       const catSlug = newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const catObj: Category = {
-        id: `c_${Math.random().toString(36).substr(2, 9)}`,
+        id: generateUUID(),
         name: newCategoryName.trim(),
         slug: catSlug,
         description: newCategoryDescription.trim(),

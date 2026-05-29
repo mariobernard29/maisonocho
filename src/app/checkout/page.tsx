@@ -12,6 +12,7 @@ import Footer from '../../components/client/Footer';
 import { useCart } from '../../hooks/use-cart';
 import { db } from '../../lib/supabase';
 import { DeliveryZone, BlockedDate } from '../../types';
+import { generateUUID } from '../../lib/uuid';
 
 // Zod Schema
 const checkoutSchema = z.object({
@@ -151,7 +152,7 @@ export default function CheckoutPage() {
       const total = subtotal + shippingFee;
 
       const orderObj = {
-        id: `o_${Math.random().toString(36).substr(2, 9)}`,
+        id: generateUUID(),
         order_number: `MO-${Math.floor(1000 + Math.random() * 9000)}`,
         client_name: data.name,
         client_phone: data.phone,
