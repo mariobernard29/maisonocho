@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   const [calculatingDistance, setCalculatingDistance] = useState<boolean>(false);
   const [googleKey, setGoogleKey] = useState<string>('');
   const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
+  const [blockSubmit, setBlockSubmit] = useState<boolean>(false);
 
   // Time Slots
   const timeSlots = [
@@ -188,6 +189,17 @@ export default function CheckoutPage() {
 
     return () => clearTimeout(timer);
   }, [step, scriptLoaded, setValue]);
+
+  // Phase 4: Prevent double-taps/ghost clicks from immediately submitting the checkout on iOS/iPad
+  useEffect(() => {
+    if (step === 4) {
+      setBlockSubmit(true);
+      const timer = setTimeout(() => {
+        setBlockSubmit(false);
+      }, 500); // 500ms block absorbs standard iOS touch-to-click transition delays
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
 
   // Calculate distance using Google Maps Proxy API
   const handleCalculateDistance = async () => {
@@ -637,7 +649,7 @@ export default function CheckoutPage() {
                   ) : (
                     <button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || blockSubmit}
                       className="bg-gold text-olive hover:bg-gold-bright hover:scale-102 transition-all duration-300 text-xs tracking-[0.15em] font-semibold py-3.5 px-8 rounded uppercase inline-flex items-center gap-2 shadow-lg disabled:opacity-50"
                     >
                       {submitting ? (
