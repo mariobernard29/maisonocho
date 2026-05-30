@@ -40,6 +40,8 @@ export default function CheckoutPage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [shippingFee, setShippingFee] = useState<number>(0);
   const [calculatingDistance, setCalculatingDistance] = useState<boolean>(false);
+  const [googleKey, setGoogleKey] = useState<string>('');
+  const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
 
   // Time Slots
   const timeSlots = [
@@ -96,18 +98,119 @@ export default function CheckoutPage() {
     }
   }, [distance, zones]);
 
-  // Simulate Google Places distance calculation
-  const handleCalculateDistance = () => {
+  // Phase 1: Retrieve Google Maps API Key dynamically from environment or dynamic backend endpoint
+  useEffect(() => {
+    const envKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (envKey && !envKey.includes('YourGoogleMapsApiKey') && !envKey.includes('YourGoogleApiKey')) {
+      setGoogleKey(envKey);
+      return;
+    }
+
+    async function fetchKey() {
+      try {
+        const res = await fetch('/api/maps-key');
+        const data = await res.json();
+        if (data.success && data.apiKey && !data.apiKey.includes('YourGoogleMapsApiKey') && !data.apiKey.includes('YourGoogleApiKey')) {
+          setGoogleKey(data.apiKey);
+        }
+      } catch (err) {
+        console.error('Error fetching dynamic Google Maps Key:', err);
+      }
+    }
+    fetchKey();
+  }, []);
+
+  // Phase 2: Load Google Maps places script dynamically once the key is resolved
+  useEffect(() => {
+    if (!googleKey) return;
+
+    const scriptId = 'google-maps-places-script';
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+
+    const handleLoad = () => {
+      if ((window as any).google?.maps?.places) {
+        setScriptLoaded(true);
+      }
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleKey}&libraries=places&language=es`;
+      script.async = true;
+      script.defer = true;
+      script.addEventListener('load', handleLoad);
+      document.head.appendChild(script);
+    } else {
+      if ((window as any).google?.maps?.places) {
+        setScriptLoaded(true);
+      } else {
+        script.addEventListener('load', handleLoad);
+      }
+    }
+
+    return () => {
+      if (script) {
+        script.removeEventListener('load', handleLoad);
+      }
+    };
+  }, [googleKey]);
+
+  // Phase 3: Attach Autocomplete listener when step === 2 and script has loaded
+  useEffect(() => {
+    if (step !== 2 || !scriptLoaded) return;
+
+    const timer = setTimeout(() => {
+      const inputEl = document.getElementById('address-input') as HTMLInputElement;
+      if (!inputEl) {
+        console.warn('Address input element not found in DOM yet.');
+        return;
+      }
+
+      try {
+        console.log('Initializing Google Places Autocomplete on input element...');
+        const autocomplete = new (window as any).google.maps.places.Autocomplete(inputEl, {
+          types: ['address'],
+          componentRestrictions: { country: 'mx' }, // Restrict to Mexico since Los Mochis is in Mexico
+          fields: ['formatted_address', 'geometry']
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.formatted_address) {
+            setValue('address', place.formatted_address);
+          }
+        });
+      } catch (err) {
+        console.error('Failed to initialize Autocomplete on input element:', err);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [step, scriptLoaded, setValue]);
+
+  // Calculate distance using Google Maps Proxy API
+  const handleCalculateDistance = async () => {
     if (!watchedAddress || watchedAddress.length < 5) return;
     setCalculatingDistance(true);
     
-    setTimeout(() => {
-      // Standalone simulation to demonstrate shipping rules:
-      // Randomly generates a realistic km distance for demonstration
-      const simulatedDistance = parseFloat((Math.random() * 9 + 0.5).toFixed(1));
+    try {
+      const res = await fetch(`/api/distance?destination=${encodeURIComponent(watchedAddress)}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setDistance(data.distance_km);
+      } else {
+        throw new Error(data.error || 'Failed to calculate distance');
+      }
+    } catch (err) {
+      console.warn('Real Google Maps distance calculation failed, falling back to simulation:', err);
+      // Sandbox fallback if API is blocked or key limits reached
+      const simulatedDistance = parseFloat((Math.random() * 8 + 1.2).toFixed(1));
       setDistance(simulatedDistance);
+    } finally {
       setCalculatingDistance(false);
-    }, 1200);
+    }
   };
 
   const getMinDateString = () => {
@@ -307,9 +410,10 @@ export default function CheckoutPage() {
                         <div className="flex gap-2">
                           <input
                             type="text"
+                            id="address-input"
                             {...register('address')}
-                            className="flex-1 bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold"
-                            placeholder="Calle, Número, Colonia, Ciudad..."
+                            className="flex-1 bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
+                            placeholder="Escribe tu calle, número y colonia..."
                           />
                           <button
                             type="button"

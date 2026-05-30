@@ -12,9 +12,9 @@ export async function GET(request: Request) {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     const isKeyConfigured = apiKey && !apiKey.includes('YourGoogleMapsApiKey');
 
-    // Origin kitchen coordinates (CDMX center as seed default)
-    const originLat = 19.432608;
-    const originLng = -99.133209;
+    // Origin kitchen coordinates (Los Mochis center)
+    const originLat = 25.7954;
+    const originLng = -108.9924;
 
     if (isKeyConfigured) {
       console.log('Fetching true distance via Google Matrix API...');
