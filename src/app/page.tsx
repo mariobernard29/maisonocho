@@ -178,18 +178,24 @@ export default function HomePage() {
                 >
                   {/* Image wrapper */}
                   <div className="relative aspect-[4/3] bg-beige flex items-center justify-center overflow-hidden border-b border-olive/5">
-                    {/* Decorative Maison watermark inside placeholder */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-olive/5 group-hover:scale-105 transition-transform duration-700">
-                      <span className="editorial-title text-6xl text-olive/5 font-extrabold select-none">
-                        VIII
-                      </span>
-                    </div>
-                    {/* Minimal graphic showing product brand */}
-                    <div className="w-20 h-20 rounded-full border border-gold/30 bg-crema flex items-center justify-center shadow-inner relative z-10">
-                      <span className="editorial-title text-gold font-semibold text-base tracking-widest">
-                        VIII
-                      </span>
-                    </div>
+                    {prod.image_url && (prod.image_url.startsWith('data:image/') || prod.image_url.startsWith('http')) ? (
+                      <img src={prod.image_url} alt={prod.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    ) : (
+                      <>
+                        {/* Decorative Maison watermark inside placeholder */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-olive/5 group-hover:scale-105 transition-transform duration-700">
+                          <span className="editorial-title text-6xl text-olive/5 font-extrabold select-none">
+                            VIII
+                          </span>
+                        </div>
+                        {/* Minimal graphic showing product brand */}
+                        <div className="w-20 h-20 rounded-full border border-gold/30 bg-crema flex items-center justify-center shadow-inner relative z-10">
+                          <span className="editorial-title text-gold font-semibold text-base tracking-widest">
+                            VIII
+                          </span>
+                        </div>
+                      </>
+                    )}
                     <div className="absolute bottom-3 left-3 bg-olive text-crema text-[9px] tracking-widest font-semibold px-2.5 py-1 rounded uppercase">
                       Prep: {prod.prep_time_minutes} min
                     </div>

@@ -355,7 +355,7 @@ export default function AdminProducts() {
             <div key={p.id} className="bg-[#0A0F0A] border border-gold/10 rounded-lg shadow-xl overflow-hidden flex flex-col justify-between group">
               {/* Product Header Thumbnail */}
               <div className="aspect-[4/3] bg-[#121A12]/40 relative flex items-center justify-center border-b border-gold/10 overflow-hidden">
-                {p.image_url.startsWith('data:image/') || p.image_url.startsWith('http') ? (
+                {p.image_url && (p.image_url.startsWith('data:image/') || p.image_url.startsWith('http')) ? (
                   <img src={p.image_url} alt={p.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 ) : (
                   <>
