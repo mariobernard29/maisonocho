@@ -17,6 +17,13 @@ export default function AdminConfiguracion() {
   const [kitchenLng, setKitchenLng] = useState<number>(-99.133209);
   const [clientTemplate, setClientTemplate] = useState('');
   const [adminTemplate, setAdminTemplate] = useState('');
+  const [showPrepTime, setShowPrepTime] = useState<boolean>(true);
+
+  // Editing zone states
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
+  const [editMinKm, setEditMinKm] = useState<number>(0);
+  const [editMaxKm, setEditMaxKm] = useState<number>(0);
+  const [editPrice, setEditPrice] = useState<number>(0);
 
   // Tables states
   const [zones, setZones] = useState<DeliveryZone[]>([]);
@@ -46,6 +53,7 @@ export default function AdminConfiguracion() {
         setKitchenLng(sett.delivery_kitchen_coords?.lng || -99.133209);
         setClientTemplate(sett.whatsapp_template_client || '');
         setAdminTemplate(sett.whatsapp_template_admin || '');
+        setShowPrepTime(sett.show_prep_time === true || sett.show_prep_time === 'true');
 
         setZones(zoneList);
         setBlockedDates(dateList);
@@ -66,7 +74,8 @@ export default function AdminConfiguracion() {
         google_maps_origin_link: googleMapsOrigin,
         delivery_kitchen_coords: { lat: kitchenLat, lng: kitchenLng },
         whatsapp_template_client: clientTemplate,
-        whatsapp_template_admin: adminTemplate
+        whatsapp_template_admin: adminTemplate,
+        show_prep_time: showPrepTime
       };
 
       await db.saveSettings(payload);
@@ -74,6 +83,57 @@ export default function AdminConfiguracion() {
     } catch (err) {
       console.error(err);
       alert('Error al guardar configuraciones.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartEditZone = (zone: DeliveryZone) => {
+    setEditingZoneId(zone.id);
+    setEditMinKm(zone.min_km);
+    setEditMaxKm(zone.max_km);
+    setEditPrice(zone.price);
+  };
+
+  const handleCancelEditZone = () => {
+    setEditingZoneId(null);
+  };
+
+  const handleSaveEditZone = async (zone: DeliveryZone) => {
+    if (editMaxKm <= editMinKm || editPrice < 0) {
+      alert('Por favor verifique los rangos de kilómetros y el precio.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const updatedZone: DeliveryZone = {
+        ...zone,
+        min_km: editMinKm,
+        max_km: editMaxKm,
+        price: editPrice
+      };
+      await db.saveDeliveryZone(updatedZone);
+      setZones(prev => prev.map(z => z.id === zone.id ? updatedZone : z).sort((a,b) => a.min_km - b.min_km));
+      setEditingZoneId(null);
+      alert('Tarifa actualizada con éxito! ✨');
+    } catch (e) {
+      console.error(e);
+      alert('Error al actualizar tarifa.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteZone = async (id: string) => {
+    if (!confirm('¿Está seguro de que desea eliminar esta tarifa de envío?')) return;
+    setLoading(true);
+    try {
+      await db.deleteDeliveryZone(id);
+      setZones(prev => prev.filter(z => z.id !== id));
+      alert('Tarifa de envío eliminada con éxito.');
+    } catch (e) {
+      console.error(e);
+      alert('Error al eliminar la tarifa.');
     } finally {
       setLoading(false);
     }
@@ -185,42 +245,74 @@ export default function AdminConfiguracion() {
       {activeTab === 'logistics' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Settings origins */}
-          <div className="lg:col-span-5 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-5 text-xs">
-            <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Dirección Origen (Dark Kitchen)</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Link de Google Maps</label>
-                <input
-                  type="text"
-                  value={googleMapsOrigin}
-                  onChange={(e) => setGoogleMapsOrigin(e.target.value)}
-                  className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
-                  placeholder="https://maps.app.goo.gl/..."
-                />
-              </div>
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-5 text-xs">
+              <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Dirección Origen (Dark Kitchen)</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Link de Google Maps</label>
+                  <input
+                    type="text"
+                    value={googleMapsOrigin}
+                    onChange={(e) => setGoogleMapsOrigin(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
+                    placeholder="https://maps.app.goo.gl/..."
+                  />
+                </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Latitud Coordenadas</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    value={kitchenLat}
-                    onChange={(e) => setKitchenLat(parseFloat(e.target.value))}
-                    className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Latitud Coordenadas</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={kitchenLat}
+                      onChange={(e) => setKitchenLat(parseFloat(e.target.value))}
+                      className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Longitud Coordenadas</label>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      value={kitchenLng}
+                      onChange={(e) => setKitchenLng(parseFloat(e.target.value))}
+                      className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Longitud Coordenadas</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    value={kitchenLng}
-                    onChange={(e) => setKitchenLng(parseFloat(e.target.value))}
-                    className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
-                  />
+
+                <button
+                  onClick={handleSaveSettings}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-gold text-olive hover:bg-gold-bright py-3 rounded font-bold uppercase transition-all shadow-lg text-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Guardar Ubicación</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Catalog display settings */}
+            <div className="bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-5 text-xs">
+              <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Visualización del Catálogo</h3>
+              <div className="flex items-center justify-between p-3.5 bg-[#121A12]/40 border border-gold/5 rounded">
+                <div className="pr-4">
+                  <span className="font-semibold text-crema block text-xs">Mostrar Tiempo de Preparación</span>
+                  <span className="text-[10px] text-crema/40 leading-relaxed block font-light mt-0.5">
+                    Muestra la etiqueta &apos;Prep: X min&apos; en la tienda y landing page.
+                  </span>
                 </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input 
+                    type="checkbox" 
+                    checked={showPrepTime} 
+                    onChange={(e) => setShowPrepTime(e.target.checked)}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-9 h-5 bg-[#121A12] border border-gold/15 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gold/40 after:border-gold/30 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-gold/20 peer-checked:after:bg-gold"></div>
+                </label>
               </div>
 
               <button
@@ -228,7 +320,7 @@ export default function AdminConfiguracion() {
                 className="w-full inline-flex items-center justify-center gap-2 bg-gold text-olive hover:bg-gold-bright py-3 rounded font-bold uppercase transition-all shadow-lg text-xs"
               >
                 <Save className="w-4 h-4" />
-                <span>Guardar Ubicación</span>
+                <span>Guardar Visualización</span>
               </button>
             </div>
           </div>
@@ -245,28 +337,92 @@ export default function AdminConfiguracion() {
                     <th className="p-3">Rango Max</th>
                     <th className="p-3 text-right">Precio Envío</th>
                     <th className="p-3 text-center">Estado</th>
+                    <th className="p-3 text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gold/5">
-                  {zones.map((z) => (
-                    <tr key={z.id} className="hover:bg-[#121A12]/20">
-                      <td className="p-3 font-semibold text-crema">{z.min_km} km</td>
-                      <td className="p-3 font-semibold text-crema">{z.max_km === 99 ? '8+ km' : `${z.max_km} km`}</td>
-                      <td className="p-3 font-bold text-gold text-right">${z.price.toFixed(2)}</td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleToggleZoneBlocked(z)}
-                          className={`px-3 py-1 rounded text-[9px] font-bold border uppercase transition-colors ${
-                            z.is_blocked
-                              ? 'bg-red-500/10 border-red-500/25 text-red-400'
-                              : 'bg-green-500/10 border-green-500/25 text-green-400'
-                          }`}
-                        >
-                          {z.is_blocked ? 'Bloqueada' : 'Activa'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {zones.map((z) => {
+                    const isEditing = editingZoneId === z.id;
+                    return (
+                      <tr key={z.id} className="hover:bg-[#121A12]/20 transition-colors">
+                        {isEditing ? (
+                          <>
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                value={editMinKm}
+                                onChange={(e) => setEditMinKm(parseFloat(e.target.value) || 0)}
+                                className="w-16 bg-[#121A12] border border-gold/25 rounded px-2 py-1 text-crema text-xs text-center focus:outline-none focus:border-gold"
+                              />
+                            </td>
+                            <td className="p-2">
+                              <input
+                                type="number"
+                                value={editMaxKm}
+                                onChange={(e) => setEditMaxKm(parseFloat(e.target.value) || 0)}
+                                className="w-16 bg-[#121A12] border border-gold/25 rounded px-2 py-1 text-crema text-xs text-center focus:outline-none focus:border-gold"
+                              />
+                            </td>
+                            <td className="p-2 text-right">
+                              <input
+                                type="number"
+                                value={editPrice}
+                                onChange={(e) => setEditPrice(parseFloat(e.target.value) || 0)}
+                                className="w-20 bg-[#121A12] border border-gold/25 rounded px-2 py-1 text-crema text-xs text-right focus:outline-none focus:border-gold"
+                              />
+                            </td>
+                            <td className="p-2 text-center text-crema/30">-</td>
+                            <td className="p-2 text-center flex items-center justify-center gap-1.5 pt-3.5">
+                              <button
+                                onClick={() => handleSaveEditZone(z)}
+                                className="px-2 py-1 rounded bg-green-500/10 border border-green-500/25 text-green-400 font-bold text-[10px] hover:bg-green-500/20 transition-colors"
+                              >
+                                Guardar
+                              </button>
+                              <button
+                                onClick={handleCancelEditZone}
+                                className="px-2 py-1 rounded bg-olive/10 border border-olive/20 text-crema/60 font-bold text-[10px] hover:bg-olive/20 transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="p-3 font-semibold text-crema">{z.min_km} km</td>
+                            <td className="p-3 font-semibold text-crema">{z.max_km === 99 ? '8+ km' : `${z.max_km} km`}</td>
+                            <td className="p-3 font-bold text-gold text-right">${z.price.toFixed(2)}</td>
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={() => handleToggleZoneBlocked(z)}
+                                className={`px-3 py-1 rounded text-[9px] font-bold border uppercase transition-colors ${
+                                  z.is_blocked
+                                    ? 'bg-red-500/10 border-red-500/25 text-red-400'
+                                    : 'bg-green-500/10 border-green-500/25 text-green-400'
+                                }`}
+                              >
+                                {z.is_blocked ? 'Bloqueada' : 'Activa'}
+                              </button>
+                            </td>
+                            <td className="p-3 text-center flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleStartEditZone(z)}
+                                className="px-2.5 py-1 rounded bg-gold/10 border border-gold/25 text-gold hover:bg-gold/20 font-bold text-[10px] transition-colors"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleDeleteZone(z.id)}
+                                className="px-2.5 py-1 rounded bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 font-bold text-[10px] transition-colors"
+                              >
+                                Eliminar
+                              </button>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

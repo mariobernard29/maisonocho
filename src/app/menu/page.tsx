@@ -17,6 +17,7 @@ function MenuContent() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPrepTime, setShowPrepTime] = useState<boolean>(true);
   
   // Filtering & search
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -31,12 +32,16 @@ function MenuContent() {
   useEffect(() => {
     async function loadMenuData() {
       try {
-        const [cats, prods] = await Promise.all([
+        const [cats, prods, settings] = await Promise.all([
           db.getCategories(),
-          db.getProducts()
+          db.getProducts(),
+          db.getSettings()
         ]);
         setCategories(cats);
         setProducts(prods);
+        if (settings && typeof settings.show_prep_time !== 'undefined') {
+          setShowPrepTime(settings.show_prep_time === true || settings.show_prep_time === 'true');
+        }
 
         // Handle URL deep link to product variant modal
         if (initialProdSlug) {
@@ -214,9 +219,11 @@ function MenuContent() {
                       </div>
                     </>
                   )}
-                  <div className="absolute bottom-3 left-3 bg-olive text-crema text-[9px] tracking-widest font-semibold px-2.5 py-1 rounded uppercase">
-                    Prep: {prod.prep_time_minutes} min
-                  </div>
+                  {showPrepTime && (
+                    <div className="absolute bottom-3 left-3 bg-olive text-crema text-[9px] tracking-widest font-semibold px-2.5 py-1 rounded uppercase">
+                      Prep: {prod.prep_time_minutes} min
+                    </div>
+                  )}
                 </div>
 
                 {/* Product Body */}

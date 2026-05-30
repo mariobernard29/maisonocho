@@ -164,7 +164,8 @@ const defaultSettings = {
   google_maps_origin_link: 'https://maps.app.goo.gl/dYh3H51t915W7yEw8',
   delivery_kitchen_coords: { lat: 19.432608, lng: -99.133209 },
   whatsapp_template_client: 'Hola {nombre},\nTu pedido en *Maison VIII* ha sido confirmado. ✨\n\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} en el horario de {hora}\n\n¡Gracias por elegir la distinción de Maison VIII! 🥐',
-  whatsapp_template_admin: '🚨 *Nuevo pedido Maison VIII*\n\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Dirección:* {direccion}\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} {hora}'
+  whatsapp_template_admin: '🚨 *Nuevo pedido Maison VIII*\n\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Dirección:* {direccion}\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} {hora}',
+  show_prep_time: true
 };
 
 const defaultCustomers: Customer[] = [
@@ -390,6 +391,12 @@ class DBService {
     }
     this.set('delivery_zones', list);
     return zone;
+  }
+
+  deleteDeliveryZone(id: string): void {
+    const list = this.getDeliveryZones();
+    const filtered = list.filter(z => z.id !== id);
+    this.set('delivery_zones', filtered);
   }
 
   // Blocked Dates

@@ -12,12 +12,19 @@ import { Product } from "../types";
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPrepTime, setShowPrepTime] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const prods = await db.getProducts();
+        const [prods, settings] = await Promise.all([
+          db.getProducts(),
+          db.getSettings()
+        ]);
         setFeaturedProducts(prods.filter((p) => p.is_featured));
+        if (settings && typeof settings.show_prep_time !== "undefined") {
+          setShowPrepTime(settings.show_prep_time === true || settings.show_prep_time === "true");
+        }
       } catch (err) {
         console.error("Error loading homepage products:", err);
       } finally {
@@ -203,9 +210,11 @@ export default function HomePage() {
                         </div>
                       </>
                     )}
-                    <div className="absolute bottom-3 left-3 bg-olive text-crema text-[9px] tracking-widest font-semibold px-2.5 py-1 rounded uppercase">
-                      Prep: {prod.prep_time_minutes} min
-                    </div>
+                    {showPrepTime && (
+                      <div className="absolute bottom-3 left-3 bg-olive text-crema text-[9px] tracking-widest font-semibold px-2.5 py-1 rounded uppercase">
+                        Prep: {prod.prep_time_minutes} min
+                      </div>
+                    )}
                   </div>
 
                   {/* Body content */}

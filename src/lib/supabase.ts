@@ -266,6 +266,23 @@ export const db = {
     }
   },
 
+  async deleteDeliveryZone(id: string): Promise<void> {
+    if (!isSupabaseConfigured) {
+      dbMock.deleteDeliveryZone(id);
+      return;
+    }
+    try {
+      const { error } = await supabase!
+        .from('delivery_zones')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    } catch (e) {
+      console.warn('Supabase deleteDeliveryZone failed, falling back to Mock:', e);
+      dbMock.deleteDeliveryZone(id);
+    }
+  },
+
   async getBlockedDates(): Promise<BlockedDate[]> {
     if (!isSupabaseConfigured) return dbMock.getBlockedDates();
     try {
