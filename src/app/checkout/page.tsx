@@ -60,6 +60,7 @@ export default function CheckoutPage() {
 
   const watchedAddress = watch('address');
   const watchedDate = watch('deliveryDate');
+  const watchedPaymentMethod = watch('paymentMethod');
 
   useEffect(() => {
     setMounted(true);
@@ -393,12 +394,15 @@ export default function CheckoutPage() {
 
                     {/* Special notes */}
                     <div>
-                      <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1.5">Comentarios o Indicaciones Especiales</label>
+                      <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1">Comentarios Especiales y Distribución de Empaque</label>
+                      <span className="text-[10px] text-olive/50 block mb-2 leading-relaxed font-light">
+                        Contamos con cajas de especialidad con capacidad para **1, 2, 3 y 4 Rolls**. Por favor indica aquí si deseas empaques individuales o agrupados (Ej. <i>&quot;Quiero 1 Roll en caja individual y 4 Rolls juntos en caja de 4&quot;</i>).
+                      </span>
                       <textarea
                         {...register('notes')}
                         rows={3}
-                        className="w-full bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold"
-                        placeholder="Ej. Escribir 'Feliz Aniversario' en la tarta, color de vela, indicaciones del intercomunicador..."
+                        className="w-full bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
+                        placeholder="Ej. Por favor empacar un Roll de canela en empaque individual y los otros 3 juntos en una caja de 3. Escribir 'Feliz Cumpleaños' en la tarta, etc..."
                       />
                     </div>
                   </motion.div>
@@ -414,39 +418,57 @@ export default function CheckoutPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Efectivo */}
-                      <label className="border border-olive/10 rounded-lg p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-beige/30 transition-all">
+                      <label className={`border rounded-lg p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
+                        watchedPaymentMethod === 'efectivo' 
+                          ? 'border-gold bg-[#1E2C1E]/5 ring-1 ring-gold shadow-md' 
+                          : 'border-olive/10 hover:bg-beige/30'
+                      }`}>
                         <input
                           type="radio"
                           value="efectivo"
                           {...register('paymentMethod')}
                           className="sr-only"
                         />
-                        <span className="editorial-title text-lg font-medium text-olive">Efectivo</span>
-                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed">Pago contra entrega al repartidor.</span>
+                        <span className={`editorial-title text-lg font-medium transition-colors ${
+                          watchedPaymentMethod === 'efectivo' ? 'text-gold font-semibold' : 'text-olive'
+                        }`}>Efectivo</span>
+                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed font-light">Pago contra entrega al repartidor.</span>
                       </label>
 
                       {/* Transferencia */}
-                      <label className="border border-olive/10 rounded-lg p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-beige/30 transition-all">
+                      <label className={`border rounded-lg p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
+                        watchedPaymentMethod === 'transferencia' 
+                          ? 'border-gold bg-[#1E2C1E]/5 ring-1 ring-gold shadow-md' 
+                          : 'border-olive/10 hover:bg-beige/30'
+                      }`}>
                         <input
                           type="radio"
                           value="transferencia"
                           {...register('paymentMethod')}
                           className="sr-only"
                         />
-                        <span className="editorial-title text-lg font-medium text-olive">Transferencia</span>
-                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed">Instrucciones bancarias enviadas por WhatsApp.</span>
+                        <span className={`editorial-title text-lg font-medium transition-colors ${
+                          watchedPaymentMethod === 'transferencia' ? 'text-gold font-semibold' : 'text-olive'
+                        }`}>Transferencia</span>
+                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed font-light">Instrucciones bancarias enviadas por WhatsApp.</span>
                       </label>
 
                       {/* Link de pago */}
-                      <label className="border border-olive/10 rounded-lg p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-beige/30 transition-all">
+                      <label className={`border rounded-lg p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
+                        watchedPaymentMethod === 'link_pago' 
+                          ? 'border-gold bg-[#1E2C1E]/5 ring-1 ring-gold shadow-md' 
+                          : 'border-olive/10 hover:bg-beige/30'
+                      }`}>
                         <input
                           type="radio"
                           value="link_pago"
                           {...register('paymentMethod')}
                           className="sr-only"
                         />
-                        <span className="editorial-title text-lg font-medium text-olive">Tarjeta</span>
-                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed">Link de pago seguro (Stripe/Clip) enviado al confirmar.</span>
+                        <span className={`editorial-title text-lg font-medium transition-colors ${
+                          watchedPaymentMethod === 'link_pago' ? 'text-gold font-semibold' : 'text-olive'
+                        }`}>Tarjeta</span>
+                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed font-light">Link de pago seguro (Stripe/Clip) enviado al confirmar.</span>
                       </label>
                     </div>
 

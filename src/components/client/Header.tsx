@@ -126,7 +126,11 @@ export default function Header() {
                         {cart.items.map((item) => (
                           <li key={item.cartId} className="py-6 flex">
                             <div className="flex-shrink-0 w-20 h-20 border border-gold/10 rounded-md overflow-hidden bg-beige flex items-center justify-center relative">
-                              <span className="editorial-title text-xs text-gold/80 font-bold select-none">VIII</span>
+                              {item.product.image_url && (item.product.image_url.startsWith('data:image/') || item.product.image_url.startsWith('http')) ? (
+                                <img src={item.product.image_url} alt={item.product.name} className="absolute inset-0 w-full h-full object-cover" />
+                              ) : (
+                                <span className="editorial-title text-xs text-gold/80 font-bold select-none">VIII</span>
+                              )}
                             </div>
 
                             <div className="ml-4 flex-1 flex flex-col">
