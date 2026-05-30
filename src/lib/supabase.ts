@@ -167,10 +167,13 @@ export const db = {
   async saveOrder(order: Order, items: any[]): Promise<Order> {
     if (!isSupabaseConfigured) return dbMock.saveOrder({ ...order, items });
     try {
+      // Strip items from the order object to prevent PostgreSQL column errors on upsert
+      const { items: _, ...orderWithoutItems } = order as any;
+
       // Insert order
       const { data: orderData, error: orderError } = await supabase!
         .from('orders')
-        .upsert(order)
+        .upsert(orderWithoutItems)
         .select()
         .single();
       if (orderError) throw orderError;

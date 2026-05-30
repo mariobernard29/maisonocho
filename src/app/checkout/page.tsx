@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Calendar, Clock, MapPin, CreditCard, User, Phone, CheckCircle, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, CreditCard, User, Phone, CheckCircle, ChevronRight, ChevronLeft, Loader2, Minus, Plus, Trash2 } from 'lucide-react';
 import Header from '../../components/client/Header';
 import Footer from '../../components/client/Footer';
 import { useCart } from '../../hooks/use-cart';
@@ -560,17 +560,51 @@ export default function CheckoutPage() {
                 
                 <div className="divide-y divide-olive/5 max-h-96 overflow-y-auto pr-1">
                   {cart.items.map((item) => (
-                    <div key={item.cartId} className="py-4 flex justify-between gap-3 text-xs">
-                      <div className="flex-1">
-                        <span className="font-semibold text-olive">{item.quantity}x</span>{' '}
-                        <span className="text-olive">{item.product.name}</span>
+                    <div key={item.cartId} className="py-4 flex justify-between items-start gap-3 border-b border-olive/5">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <h4 className="font-semibold text-olive text-xs leading-tight">{item.product.name}</h4>
+                          <span className="font-bold text-olive text-xs">${(item.singleUnitPrice * item.quantity).toFixed(2)}</span>
+                        </div>
                         {Object.keys(item.variantChoices).length > 0 && (
                           <span className="block text-[10px] text-gold font-light mt-0.5">
-                            {Object.entries(item.variantChoices).map(([k,v]) => v).join(', ')}
+                            {Object.entries(item.variantChoices).map(([k,v]) => `${k}: ${v}`).join(', ')}
                           </span>
                         )}
+                        
+                        {/* Interactive Checkout Adjusters */}
+                        <div className="flex items-center justify-between gap-4 pt-1.5">
+                          <div className="flex items-center border border-olive/15 rounded bg-crema overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => cart.updateQuantity(item.cartId, item.quantity - 1)}
+                              className="p-1 hover:bg-beige transition-colors text-olive/60"
+                              title="Disminuir"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="px-2 text-[11px] font-semibold text-olive">{item.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => cart.updateQuantity(item.cartId, item.quantity + 1)}
+                              className="p-1 hover:bg-beige transition-colors text-olive/60"
+                              title="Aumentar"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          
+                          <button
+                            type="button"
+                            onClick={() => cart.removeItem(item.cartId)}
+                            className="text-gold hover:text-red-500 text-[10px] font-medium flex items-center gap-1 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
                       </div>
-                      <span className="font-semibold text-olive text-right">${(item.singleUnitPrice * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
