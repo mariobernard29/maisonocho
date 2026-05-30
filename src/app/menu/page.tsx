@@ -127,7 +127,7 @@ function MenuContent() {
             Colección de Especialidad
           </span>
           <h1 className="editorial-title text-4xl sm:text-5xl font-extralight">
-            El Menú de la <span className="italic text-gold font-normal">Boutique</span>
+            El Menú de <span className="italic text-gold font-normal">Especialidad</span>
           </h1>
           <p className="text-sm font-light text-crema/70 max-w-lg mx-auto leading-relaxed">
             Delicias artesanales esculpidas diariamente. Haga su pedido y agende su horario de entrega en el Checkout.
@@ -362,7 +362,7 @@ export default function MenuPage() {
       <div className="flex flex-col min-h-screen bg-crema items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
           <span className="editorial-title text-4xl text-olive/60">MAISON VIII</span>
-          <span className="text-xs text-gold uppercase tracking-[0.2em] mt-2">Cargando Boutique...</span>
+          <span className="text-xs text-gold uppercase tracking-[0.2em] mt-2">Cargando Menú...</span>
         </div>
       </div>
     }>

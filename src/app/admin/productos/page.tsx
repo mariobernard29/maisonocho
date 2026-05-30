@@ -342,7 +342,7 @@ export default function AdminProducts() {
       {/* Products Grid */}
       {loading ? (
         <div className="p-20 text-center animate-pulse">
-          <span className="editorial-title text-2xl text-gold">Consultando catálogo boutique...</span>
+          <span className="editorial-title text-2xl text-gold">Consultando catálogo...</span>
         </div>
       ) : filteredProducts.length === 0 ? (
         <div className="p-20 text-center bg-[#0A0F0A] border border-gold/10 rounded-lg">

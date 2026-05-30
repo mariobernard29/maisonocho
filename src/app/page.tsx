@@ -67,8 +67,8 @@ export default function HomePage() {
             className="text-crema/75 text-base sm:text-lg font-light max-w-2xl mx-auto leading-relaxed"
           >
             Boutique de repostería fina artesanal en Los Mochis, Sinaloa.
-            Elaboramos roles de canela, New York rolls, galletas estilo New York y
-            tartas gourmet de alta costura, todo bajo los más estrictos estándares de calidad.
+            Elaboramos roles de canela, New York rolls, galletas estilo New York
+            y tartas gourmet, todo bajo los más estrictos estándares de calidad.
           </motion.p>
 
           <motion.div
@@ -179,8 +179,14 @@ export default function HomePage() {
                 >
                   {/* Image wrapper */}
                   <div className="relative aspect-[4/3] bg-beige flex items-center justify-center overflow-hidden border-b border-olive/5">
-                    {prod.image_url && (prod.image_url.startsWith('data:image/') || prod.image_url.startsWith('http')) ? (
-                      <img src={prod.image_url} alt={prod.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    {prod.image_url &&
+                    (prod.image_url.startsWith("data:image/") ||
+                      prod.image_url.startsWith("http")) ? (
+                      <img
+                        src={prod.image_url}
+                        alt={prod.name}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
                     ) : (
                       <>
                         {/* Decorative Maison watermark inside placeholder */}
@@ -245,10 +251,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             {/* Visual Column */}
             <div className="aspect-[4/5] bg-crema/5 rounded border border-gold/30 flex items-center justify-center relative overflow-hidden group">
-              <img 
-                src="/logos/Roles_cocina_maison_896x1195px.jpeg" 
-                alt="Nuestra Cocina - Roles de Canela Maison VIII" 
-                className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" 
+              <img
+                src="/logos/Roles_cocina_maison_896x1195px.jpeg"
+                alt="Nuestra Cocina - Roles de Canela Maison VIII"
+                className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-olive/10 group-hover:bg-transparent transition-colors duration-700"></div>
             </div>
@@ -265,14 +271,16 @@ export default function HomePage() {
                 </span>
               </h2>
               <p className="text-sm font-light text-crema/75 leading-relaxed">
-                Maison VIII nació en Los Mochis, Sinaloa, con una filosofía firme:
-                elevar la repostería fina a una experiencia artística e inmersiva, 
-                distanciándonos de la pastelería tradicional para crear piezas de autor.
+                Maison VIII nació en Los Mochis, Sinaloa, con una filosofía
+                firme: elevar la repostería fina a una experiencia artística e
+                inmersiva, distanciándonos de la pastelería tradicional para
+                crear piezas inigualebles.
               </p>
               <p className="text-sm font-light text-crema/75 leading-relaxed">
-                Especializados en roles de canela monumentales, crujientes New York rolls, 
-                galletas de alta costura al estilo New York y tartas finas. Cada creación es tratada como 
-                una joya culinaria bajo los más rigurosos estándares de calidad.
+                Especializados en roles de canela monumentales, crujientes New
+                York rolls, galletas al estilo New York y tartas finas. Cada
+                creación es tratada como una joya culinaria bajo los más
+                rigurosos estándares de calidad.
               </p>
               <div className="pt-4">
                 <Link

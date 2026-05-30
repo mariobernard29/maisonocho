@@ -215,7 +215,7 @@ export default function CheckoutPage() {
 
       <section className="bg-olive text-crema py-10 px-4 text-center border-b border-gold/15">
         <h1 className="editorial-title text-3xl font-light">Finalizar Pedido</h1>
-        <p className="text-xs text-crema/60 mt-1 uppercase tracking-widest">Maison VIII Boutique Checkout</p>
+        <p className="text-xs text-crema/60 mt-1 uppercase tracking-widest">Maison VIII Checkout</p>
       </section>
 
       <main className="flex-grow mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-12">
@@ -227,7 +227,7 @@ export default function CheckoutPage() {
               onClick={() => router.push('/menu')}
               className="mt-6 inline-flex bg-olive text-crema text-xs tracking-widest font-semibold py-3 px-8 rounded hover:bg-gold transition-colors uppercase"
             >
-              Ir al Menú Boutique
+              Ir al Menú
             </button>
           </div>
         ) : (
