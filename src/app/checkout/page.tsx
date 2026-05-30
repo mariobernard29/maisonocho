@@ -572,7 +572,7 @@ export default function CheckoutPage() {
                         <span className={`editorial-title text-lg font-medium transition-colors ${
                           watchedPaymentMethod === 'link_pago' ? 'text-gold font-semibold' : 'text-olive'
                         }`}>Tarjeta</span>
-                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed font-light">Link de pago seguro (Stripe/Clip) enviado al confirmar.</span>
+                        <span className="text-[10px] text-olive/50 mt-1 leading-relaxed font-light">Link de pago seguro (Mercado Pago) enviado al confirmar.</span>
                       </label>
                     </div>
 

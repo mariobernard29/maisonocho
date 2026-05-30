@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
+import CustomAlertProvider from "../components/client/CustomAlertProvider";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-serif",
@@ -31,7 +32,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Maison VIII Team" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logos/favicon_maison.png",
+    shortcut: "/logos/favicon_maison.png",
+    apple: "/logos/favicon_maison.png",
   },
 };
 
@@ -45,7 +48,11 @@ export default function RootLayout({
       lang="es"
       className={`${cormorant.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <CustomAlertProvider>
+          {children}
+        </CustomAlertProvider>
+      </body>
     </html>
   );
 }
