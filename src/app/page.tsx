@@ -49,7 +49,7 @@ export default function HomePage() {
             className="space-y-4"
           >
             <span className="editorial-subtitle text-gold text-xs sm:text-sm tracking-[0.3em] font-medium block">
-              El arte de celebrar lo extraudinario
+              El arte de celebrar lo extraodinario
             </span>
             <h1 className="editorial-title text-4xl sm:text-6xl lg:text-7xl font-extralight text-crema leading-[1.1] max-w-4xl mx-auto">
               La distinción del{" "}
@@ -254,7 +254,7 @@ export default function HomePage() {
               <img
                 src="/logos/Roles_cocina_maison_896x1195px.jpeg"
                 alt="Nuestra Cocina - Roles de Canela Maison VIII"
-                className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
+                className="absolute inset-0 w-full h-full group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-olive/10 group-hover:bg-transparent transition-colors duration-700"></div>
             </div>
