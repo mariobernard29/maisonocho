@@ -66,8 +66,9 @@ export default function HomePage() {
             transition={{ delay: 0.4, duration: 0.8 }}
             className="text-crema/75 text-base sm:text-lg font-light max-w-2xl mx-auto leading-relaxed"
           >
-            Postres artesanales elaborados con técnicas tradicionales e
-            ingredientes de la mejor calidad.
+            Boutique de repostería fina artesanal en Los Mochis, Sinaloa.
+            Elaboramos roles de canela, New York rolls, galletas estilo New York y
+            tartas gourmet de alta costura, todo bajo los más estrictos estándares de calidad.
           </motion.p>
 
           <motion.div
@@ -243,17 +244,13 @@ export default function HomePage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             {/* Visual Column */}
-            <div className="aspect-[4/5] bg-crema/5 rounded border border-gold/30 flex items-center justify-center relative p-8">
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(197,168,128,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(197,168,128,0.15)_1px,transparent_1px)] bg-[size:2rem_2rem]"></div>
-
-              <div className="relative text-center space-y-4">
-                <span className="editorial-title text-[9rem] leading-none text-gold/25 block select-none">
-                  MO
-                </span>
-                <span className="editorial-subtitle text-[10px] tracking-[0.4em] text-gold/60 uppercase block">
-                  Est. 2026 &bull; Fine Bakery
-                </span>
-              </div>
+            <div className="aspect-[4/5] bg-crema/5 rounded border border-gold/30 flex items-center justify-center relative overflow-hidden group">
+              <img 
+                src="/logos/Roles_cocina_maison_896x1195px.jpeg" 
+                alt="Nuestra Cocina - Roles de Canela Maison VIII" 
+                className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" 
+              />
+              <div className="absolute inset-0 bg-olive/10 group-hover:bg-transparent transition-colors duration-700"></div>
             </div>
 
             {/* Text Column */}
@@ -268,14 +265,14 @@ export default function HomePage() {
                 </span>
               </h2>
               <p className="text-sm font-light text-crema/75 leading-relaxed">
-                Maison VIII nació con un objetivo simple pero de alta exigencia:
-                elevar la pastelería clásica a una experiencia artística
-                inmersiva.
+                Maison VIII nació en Los Mochis, Sinaloa, con una filosofía firme:
+                elevar la repostería fina a una experiencia artística e inmersiva, 
+                distanciándonos de la pastelería tradicional para crear piezas de autor.
               </p>
               <p className="text-sm font-light text-crema/75 leading-relaxed">
-                Cada Roll, galleta o tarta es tratado como una joya exclusiva.
-                Resaltamos el sabor natural de cada ingrediente, logrando una
-                suavidad única que se disfruta en cada bocado.
+                Especializados en roles de canela monumentales, crujientes New York rolls, 
+                galletas de alta costura al estilo New York y tartas finas. Cada creación es tratada como 
+                una joya culinaria bajo los más rigurosos estándares de calidad.
               </p>
               <div className="pt-4">
                 <Link
