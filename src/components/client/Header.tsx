@@ -20,9 +20,10 @@ export default function Header() {
   const subtotal = mounted ? cart.getSubtotal() : 0;
 
   return (
-    <header className={`sticky top-0 w-full glass-panel border-b border-olive/5 transition-all duration-300 ${
-      isCartOpen || isOpen ? 'z-[9999]' : 'z-50'
-    }`}>
+    <>
+      <header className={`sticky top-0 w-full glass-panel border-b border-olive/5 transition-all duration-300 ${
+        isCartOpen || isOpen ? 'z-[9999]' : 'z-50'
+      }`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center group">
@@ -100,10 +101,11 @@ export default function Header() {
           </Link>
         </div>
       )}
+    </header>
 
-      {/* Slide-out Shopping Cart Drawer */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-[9999] overflow-hidden">
+    {/* Slide-out Shopping Cart Drawer - Rendered outside <header> to bypass iOS WebKit stacking context bugs */}
+    {isCartOpen && (
+      <div className="fixed inset-0 z-[9999] overflow-hidden">
           <div
             className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm transition-opacity duration-500"
             onClick={() => setIsCartOpen(false)}
@@ -271,6 +273,6 @@ export default function Header() {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
