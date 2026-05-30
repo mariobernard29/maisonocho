@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   keywords: ["repostería fina", "pasteles de lujo", "Maison Ocho", "Maison VIII", "macarons", "tartas gourmet"],
   authors: [{ name: "Maison VIII Team" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logos/favicon_maison.png",
   },
 };
 
