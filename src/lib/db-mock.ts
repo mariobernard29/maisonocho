@@ -165,7 +165,15 @@ const defaultSettings = {
   delivery_kitchen_coords: { lat: 19.432608, lng: -99.133209 },
   whatsapp_template_client: 'Hola {nombre},\nTu pedido en *Maison VIII* ha sido confirmado. ✨\n\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} en el horario de {hora}\n\n¡Gracias por elegir la distinción de Maison VIII! 🥐',
   whatsapp_template_admin: '🚨 *Nuevo pedido Maison VIII*\n\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Dirección:* {direccion}\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} {hora}',
-  show_prep_time: true
+  show_prep_time: true,
+  rest_days: [0], // 0 = Sunday (default rest day)
+  time_slots: [
+    '09:00 - 11:00',
+    '11:00 - 13:00',
+    '13:00 - 15:00',
+    '15:00 - 17:00',
+    '17:00 - 19:00'
+  ]
 };
 
 const defaultCustomers: Customer[] = [
@@ -373,6 +381,12 @@ class DBService {
     }
     this.set('orders', list);
     return order;
+  }
+
+  deleteOrder(id: string): void {
+    const list = this.getOrders();
+    const filtered = list.filter(o => o.id !== id);
+    this.set('orders', filtered);
   }
 
   // Delivery Zones

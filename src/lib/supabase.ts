@@ -235,6 +235,24 @@ export const db = {
     }
   },
 
+  async deleteOrder(id: string): Promise<void> {
+    if (!isSupabaseConfigured) {
+      dbMock.deleteOrder(id);
+      return;
+    }
+    try {
+      await supabase!.from('order_items').delete().eq('order_id', id);
+      const { error } = await supabase!
+        .from('orders')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    } catch (e) {
+      console.warn('Supabase deleteOrder failed, falling back to Mock:', e);
+      dbMock.deleteOrder(id);
+    }
+  },
+
   async getDeliveryZones(): Promise<DeliveryZone[]> {
     if (!isSupabaseConfigured) return dbMock.getDeliveryZones();
     try {

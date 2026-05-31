@@ -19,6 +19,11 @@ export default function AdminConfiguracion() {
   const [adminTemplate, setAdminTemplate] = useState('');
   const [showPrepTime, setShowPrepTime] = useState<boolean>(true);
 
+  // Custom scheduling states
+  const [restDays, setRestDays] = useState<number[]>([0]); // 0 = Sunday (default)
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [newTimeSlot, setNewTimeSlot] = useState('');
+
   // Editing zone states
   const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
   const [editMinKm, setEditMinKm] = useState<number>(0);
@@ -55,6 +60,34 @@ export default function AdminConfiguracion() {
         setAdminTemplate(sett.whatsapp_template_admin || '');
         setShowPrepTime(sett.show_prep_time === true || sett.show_prep_time === 'true');
 
+        // Load custom time slots
+        if (sett.time_slots) {
+          try {
+            const slots = typeof sett.time_slots === 'string' ? JSON.parse(sett.time_slots) : sett.time_slots;
+            if (Array.isArray(slots)) setTimeSlots(slots);
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          setTimeSlots([
+            '09:00 - 11:00',
+            '11:00 - 13:00',
+            '13:00 - 15:00',
+            '15:00 - 17:00',
+            '17:00 - 19:00'
+          ]);
+        }
+
+        // Load custom rest days
+        if (sett.rest_days) {
+          try {
+            const days = typeof sett.rest_days === 'string' ? JSON.parse(sett.rest_days) : sett.rest_days;
+            if (Array.isArray(days)) setRestDays(days);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+
         setZones(zoneList);
         setBlockedDates(dateList);
       } catch (err) {
@@ -75,7 +108,9 @@ export default function AdminConfiguracion() {
         delivery_kitchen_coords: { lat: kitchenLat, lng: kitchenLng },
         whatsapp_template_client: clientTemplate,
         whatsapp_template_admin: adminTemplate,
-        show_prep_time: showPrepTime
+        show_prep_time: showPrepTime,
+        rest_days: restDays,
+        time_slots: timeSlots
       };
 
       await db.saveSettings(payload);
@@ -86,6 +121,55 @@ export default function AdminConfiguracion() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveScheduleSettings = async () => {
+    setLoading(true);
+    try {
+      const payload = {
+        whatsapp_number_admin: whatsappAdmin,
+        google_maps_origin_link: googleMapsOrigin,
+        delivery_kitchen_coords: { lat: kitchenLat, lng: kitchenLng },
+        whatsapp_template_client: clientTemplate,
+        whatsapp_template_admin: adminTemplate,
+        show_prep_time: showPrepTime,
+        rest_days: restDays,
+        time_slots: timeSlots
+      };
+
+      await db.saveSettings(payload);
+      alert('Horarios de entrega y días de descanso guardados con éxito! ✨');
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar horarios y días de descanso.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddTimeSlot = () => {
+    const trimmed = newTimeSlot.trim();
+    if (!trimmed) return;
+    if (timeSlots.includes(trimmed)) {
+      alert('Este horario ya existe.');
+      return;
+    }
+    setTimeSlots(prev => [...prev, trimmed].sort());
+    setNewTimeSlot('');
+  };
+
+  const handleDeleteTimeSlot = (slot: string) => {
+    setTimeSlots(prev => prev.filter(s => s !== slot));
+  };
+
+  const handleToggleRestDay = (dayNum: number) => {
+    setRestDays(prev => {
+      if (prev.includes(dayNum)) {
+        return prev.filter(d => d !== dayNum);
+      } else {
+        return [...prev, dayNum].sort();
+      }
+    });
   };
 
   const handleStartEditZone = (zone: DeliveryZone) => {
@@ -465,68 +549,175 @@ export default function AdminConfiguracion() {
         </div>
       )}
 
-      {/* TAB 2: SCHEDULE (BLOCKED DATES) */}
+      {/* TAB 2: SCHEDULE (WEEKLY REST DAYS, TIME SLOTS, AND BLOCKED DATES) */}
       {activeTab === 'schedule' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-xs">
-          <div className="lg:col-span-5 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-5">
-            <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Bloqueo de Fechas Especiales</h3>
+        <div className="space-y-8 text-xs">
+          
+          {/* Row 1: Weekly Rest Days & Time Slots */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Fecha a Bloquear</label>
-                <input
-                  type="date"
-                  value={newBlockedDate}
-                  onChange={(e) => setNewBlockedDate(e.target.value)}
-                  className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Motivo (Ej. Navidad)</label>
-                <input
-                  type="text"
-                  value={newBlockedReason}
-                  onChange={(e) => setNewBlockedReason(e.target.value)}
-                  className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none"
-                  placeholder="Ej. Vacaciones de Cocina"
-                />
+            {/* Weekly Rest Days Card */}
+            <div className="lg:col-span-5 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-5">
+              <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Días de Descanso (Semanal)</h3>
+              <p className="text-[10px] text-crema/40 leading-relaxed block font-light -mt-2">
+                Selecciona los días de la semana en los que la boutique permanece cerrada. Los clientes no podrán agendar entregas en estos días.
+              </p>
+              
+              <div className="space-y-2.5">
+                {[
+                  { name: 'Domingo', num: 0 },
+                  { name: 'Lunes', num: 1 },
+                  { name: 'Martes', num: 2 },
+                  { name: 'Miércoles', num: 3 },
+                  { name: 'Jueves', num: 4 },
+                  { name: 'Viernes', num: 5 },
+                  { name: 'Sábado', num: 6 }
+                ].map(day => {
+                  const isChecked = restDays.includes(day.num);
+                  return (
+                    <label key={day.num} className="flex items-center justify-between p-3 bg-[#121A12]/40 border border-gold/5 rounded cursor-pointer hover:bg-[#1E2C1E]/30 transition-colors">
+                      <span className="font-medium text-crema text-xs">{day.name}</span>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleRestDay(day.num)}
+                        className="rounded border-gold/20 bg-[#0A0F0A] text-gold focus:ring-0 focus:ring-offset-0 h-4 w-4"
+                      />
+                    </label>
+                  );
+                })}
               </div>
 
               <button
-                onClick={handleAddBlockedDate}
-                className="w-full inline-flex items-center justify-center gap-1.5 bg-gold text-olive hover:bg-gold-bright py-3 rounded font-bold uppercase transition-all shadow-lg text-xs"
+                onClick={handleSaveScheduleSettings}
+                className="w-full inline-flex items-center justify-center gap-2 bg-gold text-olive hover:bg-gold-bright py-3 rounded font-bold uppercase transition-all shadow-lg text-xs"
               >
-                <Plus className="w-4 h-4" />
-                <span>Bloquear Fecha</span>
+                <Save className="w-4 h-4" />
+                <span>Guardar Días de Descanso</span>
               </button>
             </div>
+
+            {/* Time Slots Card */}
+            <div className="lg:col-span-7 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-6">
+              <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Horarios de Entrega</h3>
+              <p className="text-[10px] text-crema/40 leading-relaxed block font-light -mt-2">
+                Administra los intervalos de horario disponibles para los pedidos. Los clientes seleccionarán uno de estos rangos al finalizar su compra.
+              </p>
+
+              {/* Time Slots List */}
+              <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                {timeSlots.length === 0 ? (
+                  <p className="text-crema/40 text-center py-6 italic">No hay horarios configurados.</p>
+                ) : (
+                  timeSlots.map((slot) => (
+                    <div key={slot} className="bg-[#121A12]/40 border border-gold/5 p-3 rounded flex justify-between items-center">
+                      <span className="font-mono font-bold text-crema text-sm">{slot}</span>
+                      <button
+                        onClick={() => handleDeleteTimeSlot(slot)}
+                        className="p-1.5 rounded bg-[#121A12] border border-red-500/15 text-red-400 hover:bg-red-950 transition-colors"
+                        title="Eliminar Horario"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Add Time Slot Row */}
+              <div className="bg-[#121A12]/40 border border-gold/10 p-4 rounded space-y-3">
+                <span className="text-[10px] font-semibold tracking-wider text-gold uppercase block">Añadir Intervalo de Horario</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ej: 13:00 - 15:00"
+                    value={newTimeSlot}
+                    onChange={(e) => setNewTimeSlot(e.target.value)}
+                    className="flex-grow bg-[#0A0F0A] border border-gold/15 rounded px-3 py-2 text-crema text-xs focus:outline-none focus:border-gold"
+                  />
+                  <button
+                    onClick={handleAddTimeSlot}
+                    className="bg-gold text-olive hover:bg-gold-bright px-5 rounded font-bold uppercase text-xs"
+                  >
+                    Añadir
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveScheduleSettings}
+                className="w-full inline-flex items-center justify-center gap-2 bg-gold text-olive hover:bg-gold-bright py-3 rounded font-bold uppercase transition-all shadow-lg text-xs"
+              >
+                <Save className="w-4 h-4" />
+                <span>Guardar Horarios</span>
+              </button>
+            </div>
+
           </div>
 
-          <div className="lg:col-span-7 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-6">
-            <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Fechas Bloqueadas Activas</h3>
+          {/* Row 2: Blocked Dates */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-5 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-5">
+              <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Bloqueo de Fechas Especiales</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Fecha a Bloquear</label>
+                  <input
+                    type="date"
+                    value={newBlockedDate}
+                    onChange={(e) => setNewBlockedDate(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold tracking-wider text-gold uppercase block mb-1.5">Motivo (Ej. Navidad)</label>
+                  <input
+                    type="text"
+                    value={newBlockedReason}
+                    onChange={(e) => setNewBlockedReason(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold"
+                    placeholder="Ej. Vacaciones de Cocina"
+                  />
+                </div>
 
-            <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
-              {blockedDates.length === 0 ? (
-                <p className="text-crema/40 text-center py-8 italic">No hay fechas bloqueadas actualmente.</p>
-              ) : (
-                blockedDates.map((d) => (
-                  <div key={d.id} className="bg-[#121A12]/40 border border-gold/5 p-4 rounded flex justify-between items-center">
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-crema text-sm">{d.date}</span>
-                      <p className="text-crema/60 font-light">{d.reason}</p>
+                <button
+                  onClick={handleAddBlockedDate}
+                  className="w-full inline-flex items-center justify-center gap-1.5 bg-gold text-olive hover:bg-gold-bright py-3 rounded font-bold uppercase transition-all shadow-lg text-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Bloquear Fecha</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7 bg-[#0A0F0A] border border-gold/10 p-6 rounded-lg shadow-xl space-y-6">
+              <h3 className="editorial-title text-lg text-gold font-light border-b border-gold/15 pb-3">Fechas Bloqueadas Activas</h3>
+
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {blockedDates.length === 0 ? (
+                  <p className="text-crema/40 text-center py-8 italic">No hay fechas bloqueadas actualmente.</p>
+                ) : (
+                  blockedDates.map((d) => (
+                    <div key={d.id} className="bg-[#121A12]/40 border border-gold/5 p-4 rounded flex justify-between items-center">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-crema text-sm">{d.date}</span>
+                        <p className="text-crema/60 font-light">{d.reason}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteBlockedDate(d.id)}
+                        className="p-2 rounded bg-[#121A12] border border-red-500/15 text-red-400 hover:bg-red-950 transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteBlockedDate(d.id)}
-                      className="p-2 rounded bg-[#121A12] border border-red-500/15 text-red-400 hover:bg-red-950 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </div>
+
         </div>
       )}
 

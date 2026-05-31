@@ -44,14 +44,15 @@ export default function CheckoutPage() {
   const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
   const [blockSubmit, setBlockSubmit] = useState<boolean>(false);
 
-  // Time Slots
-  const timeSlots = [
+  // Dynamic Time Slots & Rest Days
+  const [timeSlots, setTimeSlots] = useState<string[]>([
     '09:00 - 11:00',
     '11:00 - 13:00',
     '13:00 - 15:00',
     '15:00 - 17:00',
     '17:00 - 19:00'
-  ];
+  ]);
+  const [restDays, setRestDays] = useState<number[]>([0]); // 0 = Sunday (default)
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -69,12 +70,21 @@ export default function CheckoutPage() {
     setMounted(true);
     async function loadLogistics() {
       try {
-        const [zData, dData] = await Promise.all([
+        const [zData, dData, sData] = await Promise.all([
           db.getDeliveryZones(),
-          db.getBlockedDates()
+          db.getBlockedDates(),
+          db.getSettings()
         ]);
         setZones(zData);
         setBlockedDates(dData);
+        if (sData) {
+          if (sData.time_slots && Array.isArray(sData.time_slots)) {
+            setTimeSlots(sData.time_slots);
+          }
+          if (sData.rest_days && Array.isArray(sData.rest_days)) {
+            setRestDays(sData.rest_days);
+          }
+        }
       } catch (err) {
         console.error('Error loading logistics:', err);
       }
@@ -234,12 +244,16 @@ export default function CheckoutPage() {
   };
 
   const isDateBlocked = (dateStr: string) => {
-    const dateObj = new Date(dateStr);
-    
-    // 1. Check if Sunday (0)
-    if (dateObj.getDay() === 6) return 'Domingos cerrado'; // note: getDay() is 0-indexed, on UTC/local sometimes offset. Sunday = 6 in JS if local/UTC mismatch depending on timezone. Standard: Sunday = 0, Saturday = 6. 
-    // Let's check: dateObj.getDay() === 0 (Sunday)
-    if (dateObj.getUTCDay() === 0 || dateObj.getDay() === 0) return 'Domingos cerrado';
+    // Parse dateStr (YYYY-MM-DD) as local date to ensure day-of-week calculation is precise
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    const dayOfWeek = localDate.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+    // 1. Check if the day of week is a weekly rest day
+    if (restDays.includes(dayOfWeek)) {
+      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      return `${dayNames[dayOfWeek]} cerrado`;
+    }
 
     // 2. Check if in blocked dates list
     const isBlocked = blockedDates.some(d => d.date === dateStr);

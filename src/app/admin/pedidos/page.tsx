@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingBag, Eye, Printer, PhoneCall, RefreshCw, Download, Edit } from 'lucide-react';
+import { Search, ShoppingBag, Eye, Printer, PhoneCall, RefreshCw, Download, Edit, Trash2 } from 'lucide-react';
 import { db } from '../../../lib/supabase';
 import { Order, OrderStatus } from '../../../types';
 
@@ -13,6 +13,21 @@ export default function AdminOrders() {
   // Search & Filter
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Editing order states
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [editClientName, setEditClientName] = useState('');
+  const [editClientPhone, setEditClientPhone] = useState('');
+  const [editDeliveryAddress, setEditDeliveryAddress] = useState('');
+  const [editDeliveryDate, setEditDeliveryDate] = useState('');
+  const [editDeliveryTimeSlot, setEditDeliveryTimeSlot] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editPaymentMethod, setEditPaymentMethod] = useState<'efectivo' | 'transferencia' | 'link_pago'>('efectivo');
+  const [editPaymentStatus, setEditPaymentStatus] = useState<'pendiente' | 'pagado'>('pendiente');
+  const [editDistanceKm, setEditDistanceKm] = useState<number>(0);
+  const [editDeliveryFee, setEditDeliveryFee] = useState<number>(0);
+  const [editSubtotal, setEditSubtotal] = useState<number>(0);
+  const [editItems, setEditItems] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadOrders() {
@@ -44,6 +59,74 @@ export default function AdminOrders() {
     
     // Create status change notification
     await db.createNotification('status_update', `Pedido ${matchedOrder.order_number} cambiado a ${newStatus}`);
+  };
+
+  const handleOpenEditModal = (order: Order) => {
+    setEditingOrder(order);
+    setEditClientName(order.client_name);
+    setEditClientPhone(order.client_phone);
+    setEditDeliveryAddress(order.delivery_address);
+    setEditDeliveryDate(order.delivery_date);
+    setEditDeliveryTimeSlot(order.delivery_time_slot);
+    setEditNotes(order.notes || '');
+    setEditPaymentMethod(order.payment_method);
+    setEditPaymentStatus(order.payment_status);
+    setEditDistanceKm(order.distance_km ?? 0);
+    setEditDeliveryFee(order.delivery_fee);
+    setEditSubtotal(order.subtotal);
+    setEditItems(order.items ? [...order.items] : []);
+  };
+
+  const handleSaveOrderEdit = async () => {
+    if (!editingOrder) return;
+    
+    // Recalculate subtotal and total
+    const subtotal = editItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    const total = subtotal + editDeliveryFee;
+
+    const updatedOrder: Order = {
+      ...editingOrder,
+      client_name: editClientName,
+      client_phone: editClientPhone,
+      delivery_address: editDeliveryAddress,
+      delivery_date: editDeliveryDate,
+      delivery_time_slot: editDeliveryTimeSlot,
+      notes: editNotes,
+      payment_method: editPaymentMethod,
+      payment_status: editPaymentStatus,
+      distance_km: editDistanceKm,
+      delivery_fee: editDeliveryFee,
+      subtotal,
+      total
+    };
+
+    setLoading(true);
+    try {
+      await db.saveOrder(updatedOrder, editItems);
+      setOrders(prev => prev.map(o => o.id === editingOrder.id ? { ...updatedOrder, items: editItems } : o));
+      setEditingOrder(null);
+      alert('Pedido modificado con éxito! ✨');
+    } catch (err) {
+      console.error(err);
+      alert('Error al guardar las modificaciones del pedido.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('¿Está seguro de que desea eliminar permanentemente este pedido? Esta acción no se puede deshacer.')) return;
+    setLoading(true);
+    try {
+      await db.deleteOrder(orderId);
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      alert('Pedido eliminado con éxito.');
+    } catch (e) {
+      console.error(e);
+      alert('Error al eliminar el pedido.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrint = () => {
@@ -246,6 +329,15 @@ export default function AdminOrders() {
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
+
+                        {/* Edit Order */}
+                        <button
+                          onClick={() => handleOpenEditModal(o)}
+                          className="p-1.5 rounded bg-[#121A12] hover:bg-gold hover:text-olive border border-gold/15 text-gold transition-colors"
+                          title="Editar Pedido"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
                         
                         {/* WhatsApp Resend */}
                         <button
@@ -254,6 +346,15 @@ export default function AdminOrders() {
                           title="Enviar WhatsApp"
                         >
                           <PhoneCall className="w-3.5 h-3.5" />
+                        </button>
+
+                        {/* Delete Order */}
+                        <button
+                          onClick={() => handleDeleteOrder(o.id)}
+                          className="p-1.5 rounded bg-[#121A12] hover:bg-red-600 hover:text-white border border-gold/15 text-gold transition-colors"
+                          title="Eliminar Pedido"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -402,6 +503,225 @@ export default function AdminOrders() {
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir Ticket</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT VIEW DIALOG / MODAL */}
+      {editingOrder && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="absolute inset-0 bg-[#000]/60 backdrop-blur-sm" onClick={() => setEditingOrder(null)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-xl rounded-lg bg-[#0E150E] border border-gold/25 p-6 shadow-2xl space-y-5">
+              
+              {/* Header */}
+              <div className="flex justify-between items-center border-b border-gold/15 pb-4">
+                <div className="space-y-0.5">
+                  <h3 className="editorial-title text-xl text-gold font-light">Modificar Pedido</h3>
+                  <span className="font-mono text-xs text-crema/40 font-bold">FOLIO: {editingOrder.order_number}</span>
+                </div>
+                <button
+                  onClick={() => setEditingOrder(null)}
+                  className="text-crema/40 hover:text-crema text-lg font-bold"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Form fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Nombre del Cliente</label>
+                  <input
+                    type="text"
+                    value={editClientName}
+                    onChange={(e) => setEditClientName(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Teléfono (WhatsApp)</label>
+                  <input
+                    type="text"
+                    value={editClientPhone}
+                    onChange={(e) => setEditClientPhone(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Fecha de Entrega</label>
+                  <input
+                    type="date"
+                    value={editDeliveryDate}
+                    onChange={(e) => setEditDeliveryDate(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Horario de Entrega</label>
+                  <input
+                    type="text"
+                    value={editDeliveryTimeSlot}
+                    onChange={(e) => setEditDeliveryTimeSlot(e.target.value)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold"
+                    placeholder="Ej: 11:00 - 13:00"
+                  />
+                </div>
+              </div>
+
+              <div className="text-xs">
+                <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Dirección de Entrega</label>
+                <textarea
+                  value={editDeliveryAddress}
+                  onChange={(e) => setEditDeliveryAddress(e.target.value)}
+                  rows={2}
+                  className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold font-light leading-relaxed"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Distancia (km)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editDistanceKm}
+                    onChange={(e) => {
+                      const dist = parseFloat(e.target.value) || 0;
+                      setEditDistanceKm(dist);
+                    }}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold text-center"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Costo de Envío ($)</label>
+                  <input
+                    type="number"
+                    value={editDeliveryFee}
+                    onChange={(e) => setEditDeliveryFee(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold text-right"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Método de Pago</label>
+                  <select
+                    value={editPaymentMethod}
+                    onChange={(e) => setEditPaymentMethod(e.target.value as any)}
+                    className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold"
+                  >
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="link_pago">Tarjeta (Mercado Pago)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Items List inside Editing Modal */}
+              <div className="space-y-2 text-xs">
+                <span className="text-[10px] text-gold/60 uppercase tracking-wider block">Artículos del Pedido</span>
+                <div className="divide-y divide-gold/5 max-h-40 overflow-y-auto pr-1">
+                  {editItems.map((item, idx) => (
+                    <div key={idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex-grow">
+                        <span className="font-semibold text-gold">{item.product_name}</span>
+                        {Object.keys(item.variant_choices || {}).length > 0 && (
+                          <span className="block text-[10px] text-gold/60 font-light mt-0.5">
+                            {Object.entries(item.variant_choices).map(([k,v]) => `${k}: ${v}`).join(', ')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Quantity controls */}
+                        <div className="flex items-center border border-gold/15 rounded overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...editItems];
+                              if (updated[idx].quantity > 1) {
+                                updated[idx].quantity -= 1;
+                                setEditItems(updated);
+                              }
+                            }}
+                            className="p-1 hover:bg-gold/5 text-gold"
+                          >
+                            -
+                          </button>
+                          <span className="px-2 text-[10px] font-bold text-crema">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...editItems];
+                              updated[idx].quantity += 1;
+                              setEditItems(updated);
+                            }}
+                            className="p-1 hover:bg-gold/5 text-gold"
+                          >
+                            +
+                          </button>
+                        </div>
+                        {/* Price Input */}
+                        <input
+                          type="number"
+                          value={item.price}
+                          onChange={(e) => {
+                            const updated = [...editItems];
+                            updated[idx].price = parseFloat(e.target.value) || 0;
+                            setEditItems(updated);
+                          }}
+                          className="w-16 bg-[#121A12] border border-gold/15 rounded p-1 text-center font-semibold text-crema text-[11px] focus:outline-none focus:border-gold"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-xs">
+                <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1">Notas Especiales / Comentarios</label>
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  rows={2}
+                  className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold font-light"
+                />
+              </div>
+
+              {/* Total Calculation Display */}
+              <div className="bg-[#121A12]/40 border border-gold/10 p-3.5 rounded text-xs space-y-1">
+                <div className="flex justify-between items-center text-crema/60">
+                  <span>Subtotal Artículos:</span>
+                  <span>${editItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-crema/60">
+                  <span>Envío:</span>
+                  <span>${editDeliveryFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center font-bold text-gold border-t border-gold/5 pt-2 text-sm">
+                  <span>Total Estimado:</span>
+                  <span>${(editItems.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0) + editDeliveryFee).toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="border-t border-gold/15 pt-4 flex gap-3 justify-end text-xs">
+                <button
+                  onClick={() => setEditingOrder(null)}
+                  className="px-5 py-2.5 rounded bg-olive/10 border border-olive/20 text-crema/60 hover:bg-olive/20 transition-all font-semibold uppercase tracking-wider"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveOrderEdit}
+                  className="px-6 py-2.5 rounded bg-gold text-olive hover:bg-gold-bright transition-all font-bold uppercase tracking-wider shadow-lg"
+                >
+                  Guardar Cambios
                 </button>
               </div>
 
