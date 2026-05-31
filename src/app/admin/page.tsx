@@ -10,6 +10,7 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDashboardDate, setSelectedDashboardDate] = useState<string>('');
 
   const timeSlots = [
     '09:00 - 11:00',
@@ -49,9 +50,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  // Dashboard date filter state
-  const [selectedDashboardDate, setSelectedDashboardDate] = useState<string>('');
 
   // Calculations
   const filteredOrders = selectedDashboardDate
