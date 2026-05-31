@@ -91,7 +91,7 @@ function SuccessContent() {
           {/* Elegant header banner */}
           <div className="text-center border-b border-olive/10 pb-5 space-y-1.5">
             <h2 className="editorial-title text-2xl tracking-widest text-olive font-medium">M A I S O N   V I I I</h2>
-            <p className="text-[9px] uppercase tracking-[0.25em] text-gold font-light">Haute Pâtisserie d&#39;Auteur</p>
+            <p className="text-[10px] tracking-[0.1em] text-gold font-light">El arte de celebrar lo extraordinario</p>
             <p className="text-xs text-olive/50 font-mono mt-1">FOLIO: {order.order_number}</p>
           </div>
 
