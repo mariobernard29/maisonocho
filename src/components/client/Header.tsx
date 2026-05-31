@@ -195,7 +195,7 @@ export default function Header() {
                   <span>Instagram</span>
                 </span>
                 <span className="text-[10px] text-olive/40 tracking-normal">
-                  @maison8
+                  @maison8.reposteriafina
                 </span>
               </a>
 

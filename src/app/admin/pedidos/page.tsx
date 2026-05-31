@@ -13,6 +13,8 @@ export default function AdminOrders() {
   // Search & Filter
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
   // Editing order states
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
@@ -160,9 +162,9 @@ export default function AdminOrders() {
 
   // Export to CSV helper
   const handleExportCSV = () => {
-    if (orders.length === 0) return;
+    if (filteredOrders.length === 0) return;
     const headers = ['Pedido', 'Cliente', 'Telefono', 'Direccion', 'Subtotal', 'Envio', 'Total', 'Estado', 'Fecha Entrega', 'Horario'];
-    const rows = orders.map(o => [
+    const rows = filteredOrders.map(o => [
       o.order_number,
       o.client_name,
       `'${o.client_phone}`,
@@ -193,7 +195,17 @@ export default function AdminOrders() {
       o.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.client_phone.includes(searchQuery);
-    return matchesStatus && matchesSearch;
+
+    // Period / Date Range Filter (against o.delivery_date)
+    let matchesPeriod = true;
+    if (startDate) {
+      matchesPeriod = matchesPeriod && o.delivery_date >= startDate;
+    }
+    if (endDate) {
+      matchesPeriod = matchesPeriod && o.delivery_date <= endDate;
+    }
+
+    return matchesStatus && matchesSearch && matchesPeriod;
   });
 
   return (
@@ -237,6 +249,45 @@ export default function AdminOrders() {
             <Download className="w-4 h-4" />
             <span>Exportar CSV</span>
           </button>
+        </div>
+      </div>
+
+      {/* Period Selector Row */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-[#0A0F0A] border border-gold/10 p-4 rounded-lg shadow-xl text-xs">
+        <div className="space-y-0.5">
+          <span className="text-[10px] text-gold uppercase tracking-wider font-semibold block">Selector de Período (Entrega)</span>
+          <p className="text-[9px] text-crema/40">Filtra pedidos programados en un rango de fechas</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-crema/50 uppercase tracking-widest">Desde:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-[#121A12] border border-gold/15 rounded px-2.5 py-1.5 text-xs text-crema focus:outline-none focus:border-gold"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-crema/50 uppercase tracking-widest">Hasta:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-[#121A12] border border-gold/15 rounded px-2.5 py-1.5 text-xs text-crema focus:outline-none focus:border-gold"
+            />
+          </div>
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate('');
+                setEndDate('');
+              }}
+              className="px-3.5 py-1.5 rounded bg-olive/30 border border-gold/15 text-gold text-xs hover:bg-olive transition-colors font-bold uppercase shrink-0"
+            >
+              Limpiar
+            </button>
+          )}
         </div>
       </div>
 
