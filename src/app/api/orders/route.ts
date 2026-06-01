@@ -42,15 +42,65 @@ export async function POST(request: Request) {
       .replace(/{fecha}/g, order.delivery_date)
       .replace(/{hora}/g, order.delivery_time_slot);
 
-    // 3. Trigger WhatsApp dispatch via Twilio (if credentials exist)
+    // 3. Trigger WhatsApp dispatch via YCloud or Twilio
+    const ycloudApiKey = process.env.YCLOUD_API_KEY;
+    const ycloudSender = process.env.YCLOUD_WHATSAPP_NUMBER; // e.g. +5266824214557
+    const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER || order.client_phone; // fallback to client for test
+
+    const hasYcloud = ycloudApiKey && ycloudSender && !ycloudApiKey.includes('yourycloudapikey');
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
     const twilioToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioSender = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886';
-    const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER || order.client_phone; // fallback to client for test
-
     const hasTwilio = twilioSid && twilioToken && !twilioSid.includes('yourtwiliosid');
 
-    if (hasTwilio) {
+    if (hasYcloud) {
+      console.log('Sending real WhatsApp notifications via YCloud...');
+      try {
+        // A. Send to Client
+        const resClient = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
+          method: 'POST',
+          headers: {
+            'X-API-Key': ycloudApiKey,
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          },
+          body: JSON.stringify({
+            from: ycloudSender,
+            to: order.client_phone.startsWith('+') ? order.client_phone : `+52${order.client_phone}`,
+            type: 'text',
+            text: {
+              body: clientMessage
+            }
+          })
+        });
+        const clientResult = await resClient.json();
+        console.log('YCloud Client response:', clientResult);
+
+        // B. Send to Admin (if not a simple client resend action)
+        if (!isResend) {
+          const resAdmin = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
+            method: 'POST',
+            headers: {
+              'X-API-Key': ycloudApiKey,
+              'Content-Type': 'application/json',
+              'accept': 'application/json'
+            },
+            body: JSON.stringify({
+              from: ycloudSender,
+              to: adminNumber.startsWith('+') ? adminNumber : `+52${adminNumber}`,
+              type: 'text',
+              text: {
+                body: adminMessage
+              }
+            })
+          });
+          const adminResult = await resAdmin.json();
+          console.log('YCloud Admin response:', adminResult);
+        }
+      } catch (err) {
+        console.error('YCloud fetch dispatch failed:', err);
+      }
+    } else if (hasTwilio) {
       console.log('Sending real WhatsApp notifications via Twilio...');
       try {
         // We use native fetch to call Twilio REST API to avoid packaging errors
@@ -101,6 +151,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      ycloud_simulated: !hasYcloud,
       twilio_simulated: !hasTwilio,
       folio: order.order_number
     });
