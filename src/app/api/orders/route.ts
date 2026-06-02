@@ -56,6 +56,41 @@ export async function POST(request: Request) {
     if (hasYcloud) {
       console.log('Sending real WhatsApp notifications via YCloud...');
       try {
+        const ycloudTemplateName = process.env.YCLOUD_TEMPLATE_NAME;
+
+        // Formulate Client Payload (Template or Text)
+        let clientPayload: any = {
+          from: ycloudSender,
+          to: order.client_phone.startsWith('+') ? order.client_phone : `+52${order.client_phone}`
+        };
+
+        if (ycloudTemplateName) {
+          clientPayload.type = 'template';
+          clientPayload.template = {
+            name: ycloudTemplateName,
+            language: {
+              code: 'es'
+            },
+            components: [
+              {
+                type: 'body',
+                parameters: [
+                  { type: 'text', text: order.client_name },
+                  { type: 'text', text: order.order_number },
+                  { type: 'text', text: `$${order.total.toFixed(2)}` },
+                  { type: 'text', text: order.delivery_date },
+                  { type: 'text', text: order.delivery_time_slot }
+                ]
+              }
+            ]
+          };
+        } else {
+          clientPayload.type = 'text';
+          clientPayload.text = {
+            body: clientMessage
+          };
+        }
+
         // A. Send to Client
         const resClient = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
           method: 'POST',
@@ -64,14 +99,7 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
             'accept': 'application/json'
           },
-          body: JSON.stringify({
-            from: ycloudSender,
-            to: order.client_phone.startsWith('+') ? order.client_phone : `+52${order.client_phone}`,
-            type: 'text',
-            text: {
-              body: clientMessage
-            }
-          })
+          body: JSON.stringify(clientPayload)
         });
         const clientResult = await resClient.json();
         console.log('YCloud Client response:', clientResult);
