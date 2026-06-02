@@ -157,19 +157,44 @@ export const db = {
         .select('*, items:order_items(*)')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data || [];
+      
+      // Parse references from notes if present and delivery_instructions is missing in table
+      return (data || []).map((o: any) => {
+        let delivery_instructions = o.delivery_instructions || '';
+        let notes = o.notes || '';
+        if (!delivery_instructions && notes.includes('[Referencias:')) {
+          const match = notes.match(/\[Referencias:\s*([\s\S]*?)\]/);
+          if (match) {
+            delivery_instructions = match[1].trim();
+            notes = notes.replace(/\[Referencias:\s*([\s\S]*?)\]/, '').trim();
+          }
+        }
+        return {
+          ...o,
+          delivery_instructions,
+          notes
+        };
+      });
     } catch (e) {
       console.warn('Supabase getOrders failed, falling back to Mock:', e);
       return dbMock.getOrders();
     }
   },
-
+ 
   async saveOrder(order: Order, items: any[]): Promise<Order> {
     if (!isSupabaseConfigured) return dbMock.saveOrder({ ...order, items });
     try {
-      // Strip items from the order object to prevent PostgreSQL column errors on upsert
-      const { items: _, ...orderWithoutItems } = order as any;
-
+      // Strip items and delivery_instructions from the order object to prevent PostgreSQL column errors
+      // if the column doesn't exist yet in their Supabase table
+      const { items: _, delivery_instructions, ...orderWithoutItems } = order as any;
+ 
+      // Append delivery instructions to notes so it is saved in the database even without the column
+      let finalNotes = order.notes || '';
+      if (delivery_instructions) {
+        finalNotes = `${finalNotes}\n[Referencias: ${delivery_instructions}]`.trim();
+      }
+      orderWithoutItems.notes = finalNotes;
+ 
       // Insert order
       const { data: orderData, error: orderError } = await supabase!
         .from('orders')
@@ -177,28 +202,28 @@ export const db = {
         .select()
         .single();
       if (orderError) throw orderError;
-
+ 
       // Clean old items if editing, then insert new items
       await supabase!.from('order_items').delete().eq('order_id', orderData.id);
-
+ 
       const itemsWithOrderId = items.map(item => ({
         ...item,
         order_id: orderData.id
       }));
-
+ 
       const { error: itemsError } = await supabase!
         .from('order_items')
         .insert(itemsWithOrderId);
-
+ 
       if (itemsError) throw itemsError;
-
+ 
       // Update customer total spend
       const { data: customer } = await supabase!
         .from('customers')
         .select('*')
         .eq('phone', order.client_phone)
         .single();
-
+ 
       if (customer) {
         await supabase!
           .from('customers')
@@ -219,7 +244,7 @@ export const db = {
             tags: ['Nuevo']
           });
       }
-
+ 
       // Add to notifications
       await supabase!
         .from('notifications')
@@ -227,8 +252,13 @@ export const db = {
           type: 'new_order',
           message: `Nuevo pedido ${orderData.order_number} recibido por un total de $${orderData.total}`
         });
-
-      return { ...orderData, items: itemsWithOrderId };
+ 
+      return { 
+        ...orderData, 
+        delivery_instructions: delivery_instructions || '',
+        notes: order.notes || '',
+        items: itemsWithOrderId 
+      };
     } catch (e) {
       console.warn('Supabase saveOrder failed, falling back to Mock:', e);
       return dbMock.saveOrder({ ...order, items });
