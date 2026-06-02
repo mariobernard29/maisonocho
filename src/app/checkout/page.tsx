@@ -22,7 +22,8 @@ const checkoutSchema = z.object({
   deliveryDate: z.string().min(1, 'Seleccione una fecha de entrega'),
   deliveryTimeSlot: z.string().min(1, 'Seleccione un horario de entrega'),
   paymentMethod: z.enum(['efectivo', 'transferencia', 'link_pago']),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  deliveryInstructions: z.string().optional()
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
@@ -92,9 +93,21 @@ export default function CheckoutPage() {
     loadLogistics();
   }, []);
 
+  // Reset distance when address changes to force recalculation
+  useEffect(() => {
+    setDistance(null);
+  }, [watchedAddress]);
+
   // Sync / Calculate shipping fee when distance updates
   useEffect(() => {
     if (distance === null) return;
+    if (distance > 20) {
+      alert(`Lo sentimos, su ubicación está a ${distance} km, lo cual se encuentra Fuera de rango de entrega (máximo 20 km).`);
+      setShippingFee(0);
+      setValue('address', '');
+      setDistance(null);
+      return;
+    }
     const matchedZone = zones.find(z => distance >= z.min_km && distance < z.max_km);
     if (matchedZone) {
       if (matchedZone.is_blocked) {
@@ -265,6 +278,9 @@ export default function CheckoutPage() {
   };
 
   const onFormSubmit = async (data: CheckoutFormData) => {
+    if (step !== 4) {
+      return;
+    }
     if (cart.items.length === 0) {
       alert('Su carrito está vacío.');
       return;
@@ -288,6 +304,7 @@ export default function CheckoutPage() {
         client_phone: data.phone,
         delivery_address: data.address,
         distance_km: distance || 3.0,
+        delivery_instructions: data.deliveryInstructions || '',
         delivery_fee: shippingFee,
         subtotal,
         total,
@@ -470,6 +487,17 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* Delivery Instructions */}
+                      <div>
+                        <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1.5">Instrucciones o Referencias de Entrega</label>
+                        <textarea
+                          {...register('deliveryInstructions')}
+                          rows={2}
+                          className="w-full bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
+                          placeholder="Ej: Casa de dos pisos, portón color chocolate, timbre de lado izquierdo..."
+                        />
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -652,6 +680,12 @@ export default function CheckoutPage() {
                         if (step === 3 && !watch('deliveryTimeSlot')) {
                           alert('Por favor seleccione un horario.');
                           return;
+                        }
+                        if (step === 3) {
+                          setBlockSubmit(true);
+                          setTimeout(() => {
+                            setBlockSubmit(false);
+                          }, 1000);
                         }
                         setStep(prev => prev + 1);
                       }}

@@ -118,9 +118,17 @@ function SuccessContent() {
           <div className="border-t border-b border-olive/5 py-4 space-y-2 text-xs">
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
-              <div>
-                <span className="text-[10px] text-olive/40 uppercase tracking-wider block">Entrega a Domicilio</span>
-                <span className="text-olive leading-relaxed">{order.delivery_address}</span>
+              <div className="space-y-1">
+                <div>
+                  <span className="text-[10px] text-olive/40 uppercase tracking-wider block">Entrega a Domicilio</span>
+                  <span className="text-olive leading-relaxed">{order.delivery_address}</span>
+                </div>
+                {order.delivery_instructions && (
+                  <div className="mt-1">
+                    <span className="text-[9px] text-gold uppercase tracking-wider block font-semibold">Referencias de Entrega</span>
+                    <span className="text-olive/80 font-light leading-relaxed block italic">{order.delivery_instructions}</span>
+                  </div>
+                )}
               </div>
             </div>
             

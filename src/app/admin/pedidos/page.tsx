@@ -21,6 +21,7 @@ export default function AdminOrders() {
   const [editClientName, setEditClientName] = useState('');
   const [editClientPhone, setEditClientPhone] = useState('');
   const [editDeliveryAddress, setEditDeliveryAddress] = useState('');
+  const [editDeliveryInstructions, setEditDeliveryInstructions] = useState('');
   const [editDeliveryDate, setEditDeliveryDate] = useState('');
   const [editDeliveryTimeSlot, setEditDeliveryTimeSlot] = useState('');
   const [editNotes, setEditNotes] = useState('');
@@ -68,6 +69,7 @@ export default function AdminOrders() {
     setEditClientName(order.client_name);
     setEditClientPhone(order.client_phone);
     setEditDeliveryAddress(order.delivery_address);
+    setEditDeliveryInstructions(order.delivery_instructions || '');
     setEditDeliveryDate(order.delivery_date);
     setEditDeliveryTimeSlot(order.delivery_time_slot);
     setEditNotes(order.notes || '');
@@ -91,6 +93,7 @@ export default function AdminOrders() {
       client_name: editClientName,
       client_phone: editClientPhone,
       delivery_address: editDeliveryAddress,
+      delivery_instructions: editDeliveryInstructions,
       delivery_date: editDeliveryDate,
       delivery_time_slot: editDeliveryTimeSlot,
       notes: editNotes,
@@ -452,9 +455,17 @@ export default function AdminOrders() {
                 </div>
               </div>
 
-              <div className="border-t border-b border-gold/10 py-3 text-xs space-y-1">
-                <span className="text-[10px] text-gold/50 uppercase tracking-wider block">Dirección</span>
-                <p className="text-crema leading-relaxed font-light">{selectedOrder.delivery_address}</p>
+              <div className="border-t border-b border-gold/10 py-3 text-xs space-y-2">
+                <div>
+                  <span className="text-[10px] text-gold/50 uppercase tracking-wider block">Dirección</span>
+                  <p className="text-crema leading-relaxed font-light">{selectedOrder.delivery_address}</p>
+                </div>
+                {selectedOrder.delivery_instructions && (
+                  <div>
+                    <span className="text-[10px] text-gold/50 uppercase tracking-wider block">Referencias de Entrega</span>
+                    <p className="text-crema leading-relaxed font-light italic bg-[#121A12]/30 p-2 rounded border border-gold/5">{selectedOrder.delivery_instructions}</p>
+                  </div>
+                )}
                 <p className="text-[10px] text-gold/80 mt-1 font-light italic">&bull; Distancia: {selectedOrder.distance_km} km</p>
               </div>
 
@@ -637,6 +648,17 @@ export default function AdminOrders() {
                 />
               </div>
 
+              <div className="text-xs">
+                <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Referencias de Entrega</label>
+                <textarea
+                  value={editDeliveryInstructions}
+                  onChange={(e) => setEditDeliveryInstructions(e.target.value)}
+                  rows={2}
+                  className="w-full bg-[#121A12] border border-gold/15 rounded p-2.5 text-xs text-crema focus:outline-none focus:border-gold font-light leading-relaxed"
+                  placeholder="Instrucciones o referencias de entrega..."
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div>
                   <label className="text-[10px] text-gold/60 uppercase tracking-wider block mb-1.5">Distancia (km)</label>
@@ -794,6 +816,7 @@ export default function AdminOrders() {
             <p><strong>Teléfono:</strong> {selectedOrder.client_phone}</p>
             <p><strong>Fecha Entrega:</strong> {selectedOrder.delivery_date} ({selectedOrder.delivery_time_slot})</p>
             <p><strong>Dirección:</strong> {selectedOrder.delivery_address}</p>
+            {selectedOrder.delivery_instructions && <p><strong>Referencias:</strong> {selectedOrder.delivery_instructions}</p>}
             <p><strong>Método de Pago:</strong> {selectedOrder.payment_method.toUpperCase()}</p>
           </div>
           <div className="border-t border-b py-2 mb-4 text-[11px]">

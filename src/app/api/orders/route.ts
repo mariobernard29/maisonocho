@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     // 1. WhatsApp Template Client Compiler
     const rawClientTemplate = 
-      "Hola {nombre},\nTu pedido en *Maison VIII* ha sido confirmado. ✨\n\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} en el horario de {hora}\n\n¡Gracias por elegir la distinción de Maison VIII! 🥐";
+      "¡Su pedido se ha realizado con éxito! ✨\n\nHola {nombre},\nTu pedido en *Maison VIII* ha sido registrado.\n\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} en el horario de {hora}\n\n¡Gracias por elegir la distinción de Maison VIII! 🥐";
     
     const clientMessage = rawClientTemplate
       .replace(/{nombre}/g, order.client_name)
@@ -30,17 +30,41 @@ export async function POST(request: Request) {
       .replace(/{hora}/g, order.delivery_time_slot);
 
     // 2. WhatsApp Template Admin Compiler
-    const rawAdminTemplate = 
-      "🚨 *Nuevo pedido Maison VIII*\n\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Dirección:* {direccion}\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} {hora}";
-    
-    const adminMessage = rawAdminTemplate
-      .replace(/{nombre}/g, order.client_name)
-      .replace(/{telefono}/g, order.client_phone)
-      .replace(/{direccion}/g, order.delivery_address)
-      .replace(/{productos}/g, productListText)
-      .replace(/{total}/g, order.total.toFixed(2))
-      .replace(/{fecha}/g, order.delivery_date)
-      .replace(/{hora}/g, order.delivery_time_slot);
+    let cleanPhone = order.client_phone.replace(/\D/g, '');
+    if (cleanPhone.length === 10) {
+      cleanPhone = `52${cleanPhone}`;
+    }
+    const confirmText = `Hola ${order.client_name}, tu pedido ha sido confirmado y está en preparación para entrega el ${order.delivery_date} en el horario de ${order.delivery_time_slot}. ✨`;
+    const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(confirmText)}`;
+
+    const paymentMethodText = {
+      efectivo: 'Efectivo (Pago contra entrega)',
+      transferencia: 'Transferencia Bancaria',
+      link_pago: 'Tarjeta (Link de pago)'
+    }[order.payment_method as 'efectivo' | 'transferencia' | 'link_pago'] || order.payment_method || 'No especificado';
+
+    const deliveryInstructions = order.delivery_instructions || 'Sin instrucciones adicionales';
+    const notesText = order.notes ? `\n*Notas Especiales:* ${order.notes}\n` : '';
+
+    const adminMessage = `🚨 *Nuevo pedido Maison VIII*
+
+*Cliente:* ${order.client_name}
+*Teléfono:* ${order.client_phone}
+*Dirección:* ${order.delivery_address}
+*Referencias:* ${deliveryInstructions}
+
+*Pedido:* ${productListText}
+
+*Desglose:*
+- Subtotal: $${order.subtotal.toFixed(2)}
+- Envío: $${order.delivery_fee.toFixed(2)}
+- Total: $${order.total.toFixed(2)}
+
+*Forma de Pago:* ${paymentMethodText}
+*Entrega:* ${order.delivery_date} en el horario de ${order.delivery_time_slot}
+${notesText}
+*Confirmar pedido:*
+${waLink}`;
 
     // 3. Trigger WhatsApp dispatch via YCloud or Twilio
     const ycloudApiKey = process.env.YCLOUD_API_KEY;

@@ -69,6 +69,7 @@ export interface Order {
   delivery_lat?: number;
   delivery_lng?: number;
   distance_km?: number;
+  delivery_instructions?: string;
   delivery_fee: number;
   subtotal: number;
   total: number;
