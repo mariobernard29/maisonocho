@@ -56,7 +56,7 @@ export default function HomePage() {
             className="space-y-4"
           >
             <span className="editorial-subtitle text-gold text-xs sm:text-sm tracking-[0.3em] font-medium block">
-              El arte de celebrar lo extraodinario
+              El arte de celebrar lo extraordinario
             </span>
             <h1 className="editorial-title text-4xl sm:text-6xl lg:text-7xl font-extralight text-crema leading-[1.1] max-w-4xl mx-auto">
               La distinción del{" "}
@@ -283,7 +283,7 @@ export default function HomePage() {
                 Maison VIII nació en Los Mochis, Sinaloa, con una filosofía
                 firme: elevar la repostería fina a una experiencia artística e
                 inmersiva, distanciándonos de la pastelería tradicional para
-                crear piezas inigualebles.
+                crear piezas inigualables.
               </p>
               <p className="text-sm font-light text-crema/75 leading-relaxed">
                 Especializados en roles de canela monumentales, crujientes New

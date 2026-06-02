@@ -220,7 +220,7 @@ export default function Header() {
 
             <div className="border-t border-olive/5 mt-5 pt-4 text-center">
               <span className="text-[9px] text-olive/35 uppercase tracking-widest font-semibold block">
-                Maison VIII &bull; Repsoteria Fina
+                Maison VIII &bull; Repostería Fina
               </span>
             </div>
           </div>
