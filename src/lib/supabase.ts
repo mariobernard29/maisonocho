@@ -582,7 +582,7 @@ export const db = {
             loyalty_accumulated: 0.00,
             total_spent: 0.00,
             orders_count: 0,
-            tags: ['Club 8']
+            tags: ['LE CLUB 8']
           })
           .select()
           .single();

@@ -84,7 +84,7 @@ export default function LeClub8Page() {
           throw new Error('El número de teléfono debe tener al menos 10 dígitos.');
         }
         const profile = await db.signUpLoyalty(email, phone, name, password);
-        setSuccessMsg('¡Registro exitoso en Le Club 8! ✨');
+        setSuccessMsg('¡Registro exitoso en LE CLUB 8! ✨');
         setUserProfile(profile);
         // Load orders
         const allOrders = await db.getOrders();
@@ -371,7 +371,7 @@ export default function LeClub8Page() {
                 <div className="bg-gold/5 border border-gold/20 rounded-lg p-5 space-y-1.5 flex flex-col justify-between">
                   <span className="text-[10px] text-gold font-bold uppercase tracking-wider block">Tasa del Programa</span>
                   <p className="text-sm text-olive leading-relaxed font-light">
-                    Acumulas el <span className="font-bold text-gold">1%</span> de cashback digital de cada compra para usarlo como descuento en tu siguiente checkout.
+                    Acumulas el <span className="font-bold text-gold">5%</span> de cashback digital de cada compra para usarlo como descuento en tu siguiente checkout.
                   </p>
                 </div>
               </div>
@@ -405,7 +405,7 @@ export default function LeClub8Page() {
                           <th className="p-4 uppercase tracking-wider">Fecha</th>
                           <th className="p-4 uppercase tracking-wider text-right">Total Pedido</th>
                           <th className="p-4 uppercase tracking-wider text-right">Descuento Usado</th>
-                          <th className="p-4 uppercase tracking-wider text-right text-gold">Abono (1%)</th>
+                          <th className="p-4 uppercase tracking-wider text-right text-gold">Abono (5%)</th>
                           <th className="p-4 uppercase tracking-wider text-center">Estado</th>
                         </tr>
                       </thead>
@@ -419,7 +419,7 @@ export default function LeClub8Page() {
                               {o.loyalty_discount && o.loyalty_discount > 0 ? `-$${o.loyalty_discount.toFixed(2)}` : '$0.00'}
                             </td>
                             <td className="p-4 text-right font-bold text-gold">
-                              +${(o.loyalty_earned || (o.subtotal * 0.01)).toFixed(2)}
+                              +${(o.loyalty_earned || (o.subtotal * 0.05)).toFixed(2)}
                             </td>
                             <td className="p-4 text-center">
                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-medium border ${

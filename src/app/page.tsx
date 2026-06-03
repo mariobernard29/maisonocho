@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Star, Heart, Award, ShieldCheck } from "lucide-react";
+import { ArrowRight, Star, Heart, Award, ShieldCheck, Sparkles, CreditCard, Percent } from "lucide-react";
 import Header from "../components/client/Header";
 import Footer from "../components/client/Footer";
 import { db } from "../lib/supabase";
@@ -301,6 +301,82 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* LE CLUB 8 Promotional Section */}
+      <section
+        id="le-club-8-promo"
+        className="py-24 bg-[#0A0F0A] text-crema relative overflow-hidden border-t border-b border-gold/15"
+      >
+        {/* Subtle decorative elements matching brand style */}
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(197,168,128,0.15)_1px,transparent_1px),linear-gradient(to_bottom,rgba(197,168,128,0.15)_1px,transparent_1px)] bg-[size:3rem_3rem]"></div>
+        </div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold/5 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center space-y-4 mb-16">
+            <span className="editorial-subtitle text-xs text-gold tracking-[0.25em] font-medium block">
+              Programa de Recompensas
+            </span>
+            <h2 className="editorial-title text-4xl sm:text-5xl font-extralight leading-tight">
+              Únase a <span className="italic text-gold font-normal">LE CLUB 8</span>
+            </h2>
+            <p className="text-sm font-light text-crema/70 max-w-xl mx-auto leading-relaxed">
+              Descubra la experiencia VIP de Maison VIII. Acumule recompensas en cada compra, acceda a beneficios exclusivos y gestione su monedero digital de forma premium.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            {/* Benefit 1 */}
+            <div className="bg-[#111911] border border-gold/10 hover:border-gold/30 rounded p-8 space-y-4 transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-full bg-gold/5 border border-gold/20 flex items-center justify-center text-gold group-hover:bg-gold/10 transition-colors duration-300">
+                <Percent className="w-5 h-5 stroke-[1.5]" />
+              </div>
+              <h3 className="editorial-title text-xl text-crema font-medium">
+                5% Cashback Digital
+              </h3>
+              <p className="text-sm font-light text-crema/60 leading-relaxed">
+                Reciba el 5% de reembolso en saldo digital de cada pedido realizado con su número de teléfono registrado, acumulando dinero para usar como descuento directo en su siguiente checkout.
+              </p>
+            </div>
+
+            {/* Benefit 2 */}
+            <div className="bg-[#111911] border border-gold/10 hover:border-gold/30 rounded p-8 space-y-4 transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-full bg-gold/5 border border-gold/20 flex items-center justify-center text-gold group-hover:bg-gold/10 transition-colors duration-300">
+                <CreditCard className="w-5 h-5 stroke-[1.5]" />
+              </div>
+              <h3 className="editorial-title text-xl text-crema font-medium">
+                Tarjeta VIP Digital
+              </h3>
+              <p className="text-sm font-light text-crema/60 leading-relaxed">
+                Acceda a su portal de socio y visualice su tarjeta bancaria digital de LE CLUB 8 personalizada. Gestione su saldo disponible, acumulación histórica y listado de pedidos premiados.
+              </p>
+            </div>
+
+            {/* Benefit 3 */}
+            <div className="bg-[#111911] border border-gold/10 hover:border-gold/30 rounded p-8 space-y-4 transition-all duration-300 group hover:-translate-y-1">
+              <div className="w-12 h-12 rounded-full bg-gold/5 border border-gold/20 flex items-center justify-center text-gold group-hover:bg-gold/10 transition-colors duration-300">
+                <Sparkles className="w-5 h-5 stroke-[1.5]" />
+              </div>
+              <h3 className="editorial-title text-xl text-crema font-medium">
+                Privilegios de Socio
+              </h3>
+              <p className="text-sm font-light text-crema/60 leading-relaxed">
+                Disfrute de sorpresas especiales por ser parte del club. Invitaciones a eventos de cata privados, lanzamientos de temporada anticipados y promociones premium solo para miembros.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center pt-4">
+            <Link
+              href="/club"
+              className="inline-flex bg-gold text-olive hover:bg-gold-bright hover:scale-105 active:scale-95 transition-all duration-300 text-xs tracking-[0.2em] font-semibold py-4 px-10 rounded uppercase"
+            >
+              Unirse a LE CLUB 8
+            </Link>
           </div>
         </div>
       </section>

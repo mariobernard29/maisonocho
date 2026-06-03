@@ -307,11 +307,11 @@ export default function CheckoutPage() {
     try {
       const subtotal = cart.getSubtotal();
       
-      // Calculate Le Club 8 Loyalty discount and earnings
+      // Calculate LE CLUB 8 Loyalty discount and earnings
       const availableBalance = loyaltyProfile ? Number(loyaltyProfile.loyalty_balance || 0) : 0;
       const discountAmount = useLoyalty ? Math.min(availableBalance, subtotal + shippingFee) : 0;
       const finalTotal = Math.max(0, subtotal + shippingFee - discountAmount);
-      const earnedRewards = Number((subtotal * 0.01).toFixed(2));
+      const earnedRewards = Number((subtotal * 0.05).toFixed(2));
 
       const orderObj = {
         id: generateUUID(),
@@ -374,7 +374,7 @@ export default function CheckoutPage() {
   const availableBalance = loyaltyProfile ? Number(loyaltyProfile.loyalty_balance || 0) : 0;
   const discountAmount = useLoyalty ? Math.min(availableBalance, subtotal + shippingFee) : 0;
   const total = Math.max(0, subtotal + shippingFee - discountAmount);
-  const earnedRewards = subtotal * 0.01;
+  const earnedRewards = subtotal * 0.05;
 
   return (
     <div className="flex flex-col min-h-screen bg-crema">
@@ -651,18 +651,18 @@ export default function CheckoutPage() {
                       </label>
                     </div>
 
-                    {/* Le Club 8 Loyalty Balance Section */}
+                    {/* LE CLUB 8 Loyalty Balance Section */}
                     {loyaltyProfile && (
                       <div className="bg-[#0A0F0A] border border-gold/25 p-5 rounded-lg text-xs space-y-3 mt-4 text-[#FAF8F5] shadow-lg">
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-                            <span className="font-semibold tracking-wider uppercase text-gold">Le Club 8</span>
+                            <span className="font-semibold tracking-wider uppercase text-gold">LE CLUB 8</span>
                           </div>
                           <span className="font-mono text-gold font-bold">Saldo disponible: ${(loyaltyProfile.loyalty_balance || 0).toFixed(2)} MXN</span>
                         </div>
                         <p className="text-[11px] text-crema/70 leading-relaxed font-light">
-                          Como miembro de Le Club 8, puedes aplicar tu saldo disponible como descuento inmediato para este pedido.
+                          Como miembro de LE CLUB 8, puedes aplicar tu saldo disponible como descuento inmediato para este pedido.
                         </p>
                         
                         {Number(loyaltyProfile.loyalty_balance || 0) > 0 ? (
@@ -674,17 +674,17 @@ export default function CheckoutPage() {
                               className="w-4 h-4 accent-gold cursor-pointer"
                             />
                             <span className="text-crema text-[11px] font-medium">
-                              Aplicar descuento de Le Club 8 para este pedido (ahorras <span className="font-bold text-gold">${Math.min(Number(loyaltyProfile.loyalty_balance || 0), subtotal + shippingFee).toFixed(2)}</span>)
+                              Aplicar descuento de LE CLUB 8 para este pedido (ahorras <span className="font-bold text-gold">${Math.min(Number(loyaltyProfile.loyalty_balance || 0), subtotal + shippingFee).toFixed(2)}</span>)
                             </span>
                           </label>
                         ) : (
                           <div className="bg-[#121A12]/30 border border-gold/5 p-3 rounded text-[10px] text-crema/40 italic">
-                            No tienes saldo disponible en este momento. ¡Sigue comprando para acumular el 1%!
+                            No tienes saldo disponible en este momento. ¡Sigue comprando para acumular el 5%!
                           </div>
                         )}
                         
                         <div className="text-[10px] text-gold/85 italic">
-                          ✨ Ganarás <span className="font-bold font-mono">${(subtotal * 0.01).toFixed(2)}</span> de recompensa (1%) en este pedido.
+                          ✨ Ganarás <span className="font-bold font-mono">${(subtotal * 0.05).toFixed(2)}</span> de recompensa (5%) en este pedido.
                         </div>
                       </div>
                     )}
@@ -843,7 +843,7 @@ export default function CheckoutPage() {
                   </div>
                   {useLoyalty && discountAmount > 0 && (
                     <div className="flex justify-between items-center text-xs text-green-700 font-medium">
-                      <span>Descuento Le Club 8</span>
+                      <span>Descuento LE CLUB 8</span>
                       <span>-${discountAmount.toFixed(2)}</span>
                     </div>
                   )}
@@ -853,7 +853,7 @@ export default function CheckoutPage() {
                   </div>
                   {loyaltyProfile && (
                     <div className="text-[10px] text-gold/80 text-right italic pt-1 border-t border-dashed border-olive/10">
-                      Acumularás +${earnedRewards.toFixed(2)} MXN en Le Club 8
+                      Acumularás +${earnedRewards.toFixed(2)} MXN en LE CLUB 8
                     </div>
                   )}
                 </div>

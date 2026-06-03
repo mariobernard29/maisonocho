@@ -37,7 +37,7 @@ export default function AdminClubLoyalty() {
     loadCustomers();
   }, []);
 
-  // Filter members (only those registered in Le Club 8 - having an email)
+  // Filter members (only those registered in LE CLUB 8 - having an email)
   const loyaltyMembers = customers.filter(c => c.email);
 
   // Best Customers Ranking (All customers sorted by total_spent descending)
@@ -116,7 +116,7 @@ export default function AdminClubLoyalty() {
               <div className="absolute right-4 top-4 w-9 h-9 rounded-full bg-gold/10 text-gold flex items-center justify-center">
                 <Users className="w-5 h-5" />
               </div>
-              <span className="text-[10px] text-crema/40 uppercase tracking-wider block">Miembros Le Club 8</span>
+              <span className="text-[10px] text-crema/40 uppercase tracking-wider block">Miembros LE CLUB 8</span>
               <div>
                 <p className="text-2xl font-bold text-gold font-mono">{totalMembers}</p>
                 <span className="text-[9px] text-crema/30 block mt-0.5">Clientes registrados en el programa.</span>
@@ -143,7 +143,7 @@ export default function AdminClubLoyalty() {
               <span className="text-[10px] text-crema/40 uppercase tracking-wider block">Total Recompensas Entregadas</span>
               <div>
                 <p className="text-2xl font-bold text-gold font-mono">${totalLoyaltyAccumulated.toFixed(2)}</p>
-                <span className="text-[9px] text-crema/30 block mt-0.5">Histórico abonado al 1% de compras.</span>
+                <span className="text-[9px] text-crema/30 block mt-0.5">Histórico abonado al 5% de compras.</span>
               </div>
             </div>
 
@@ -232,7 +232,7 @@ export default function AdminClubLoyalty() {
                           <th className="p-4">Contacto</th>
                           <th className="p-4 text-center">Pedidos</th>
                           <th className="p-4 text-right">Consumo Neto</th>
-                          <th className="p-4 text-right text-gold/80">Saldo Le Club 8</th>
+                          <th className="p-4 text-right text-gold/80">Saldo LE CLUB 8</th>
                           <th className="p-4 text-center">Tipo</th>
                         </tr>
                       </thead>
@@ -288,7 +288,7 @@ export default function AdminClubLoyalty() {
             {activeTab === 'members' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-gold uppercase tracking-wider font-semibold">Directorio de Socios Le Club 8</span>
+                  <span className="text-[10px] text-gold uppercase tracking-wider font-semibold">Directorio de Socios LE CLUB 8</span>
                   <span className="text-crema/40 text-[10px]">Muestra los clientes que se han dado de alta en la web</span>
                 </div>
 

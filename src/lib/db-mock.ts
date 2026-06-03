@@ -514,7 +514,7 @@ class DBService {
     this.set('notifications', list);
   }
 
-  // Le Club 8 Loyalty Auth Mock Services
+  // LE CLUB 8 Loyalty Auth Mock Services
   signUpLoyalty(email: string, phone: string, name: string, password: string): Customer {
     const customers = this.getCustomers();
     const existingEmail = customers.find(c => c.email?.toLowerCase() === email.toLowerCase());
@@ -522,7 +522,7 @@ class DBService {
 
     let clientCust = customers.find(c => c.phone === phone);
     if (clientCust) {
-      // update existing phone profile to join Le Club 8
+      // update existing phone profile to join LE CLUB 8
       clientCust.email = email;
       clientCust.name = name;
       clientCust.loyalty_balance = clientCust.loyalty_balance || 0;
@@ -539,7 +539,7 @@ class DBService {
         orders_count: 0,
         loyalty_balance: 0,
         loyalty_accumulated: 0,
-        tags: ['Club 8'],
+        tags: ['LE CLUB 8'],
         created_at: new Date().toISOString()
       });
     }

@@ -43,25 +43,25 @@ export default function Header() {
                 href="/"
                 className="text-sm font-medium tracking-wide text-charcoal hover:text-gold transition-colors duration-300"
               >
-                Inicio
+                INICIO
               </Link>
               <Link
                 href="/menu"
                 className="text-sm font-medium tracking-wide text-charcoal hover:text-gold transition-colors duration-300"
               >
-                Menú
+                MENÚ
               </Link>
               <Link
                 href="/club"
                 className="text-sm font-medium tracking-wide text-charcoal hover:text-gold transition-colors duration-300"
               >
-                Le Club 8
+                LE CLUB 8
               </Link>
               <button
                 onClick={() => setIsContactOpen(true)}
                 className="text-sm font-medium tracking-wide text-charcoal hover:text-gold transition-colors duration-300 focus:outline-none"
               >
-                Contacto
+                CONTACTO
               </button>
             </nav>
 
@@ -105,21 +105,21 @@ export default function Header() {
               onClick={() => setIsOpen(false)}
               className="block text-base font-medium text-charcoal hover:text-gold py-2"
             >
-              Inicio
+              INICIO
             </Link>
             <Link
               href="/menu"
               onClick={() => setIsOpen(false)}
               className="block text-base font-medium text-charcoal hover:text-gold py-2"
             >
-              Menú
+              MENÚ
             </Link>
             <Link
               href="/club"
               onClick={() => setIsOpen(false)}
               className="block text-base font-medium text-charcoal hover:text-gold py-2"
             >
-              Le Club 8
+              LE CLUB 8
             </Link>
             <button
               onClick={() => {
@@ -128,7 +128,7 @@ export default function Header() {
               }}
               className="block w-full text-left text-base font-medium text-charcoal hover:text-gold py-2 focus:outline-none"
             >
-              Contacto
+              CONTACTO
             </button>
           </div>
         )}

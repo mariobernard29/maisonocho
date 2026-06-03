@@ -118,7 +118,7 @@ export default function AdminLayout({
     { name: "Pedidos", path: "/admin/pedidos", icon: ShoppingBag },
     { name: "Productos", path: "/admin/productos", icon: FolderHeart },
     { name: "Clientes", path: "/admin/clientes", icon: Users },
-    { name: "Le Club 8", path: "/admin/club", icon: Award },
+    { name: "LE CLUB 8", path: "/admin/club", icon: Award },
     { name: "Configuraciones", path: "/admin/configuracion", icon: Settings },
   ];
 
@@ -336,7 +336,7 @@ export default function AdminLayout({
               {pathname === "/admin/pedidos" && "Panel de Pedidos"}
               {pathname === "/admin/productos" && "Administración de Catálogo"}
               {pathname === "/admin/clientes" && "Directorio de Clientes"}
-              {pathname === "/admin/club" && "Le Club 8: Programa de Fidelización"}
+              {pathname === "/admin/club" && "LE CLUB 8: Programa de Fidelización"}
               {pathname === "/admin/configuracion" &&
                 "Configuraciones Avanzadas"}
             </h2>
