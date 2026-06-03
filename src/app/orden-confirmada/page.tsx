@@ -231,6 +231,12 @@ function SuccessContent() {
               <span>Subtotal</span>
               <span className="font-medium">${order.subtotal.toFixed(2)}</span>
             </div>
+            {order.loyalty_discount !== undefined && order.loyalty_discount > 0 && (
+              <div className="flex justify-between items-center text-green-700 font-medium">
+                <span>Descuento LE CLUB 8</span>
+                <span>-${order.loyalty_discount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-olive/75">
               <span>Tarifa de Envío ({order.distance_km} km)</span>
               <span className="font-medium">

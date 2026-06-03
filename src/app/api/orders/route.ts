@@ -53,7 +53,16 @@ export async function POST(request: Request) {
 
     // Helper to replace all variables in a template
     const compileTemplate = (template: string, linkPlaceholder?: string) => {
-      return template
+      let resultText = template;
+      if (!resultText.includes('{descuento_club}') && order.loyalty_discount && order.loyalty_discount > 0) {
+        if (resultText.includes('- Total:')) {
+          resultText = resultText.replace('- Total:', `- Descuento LE CLUB 8: -$${order.loyalty_discount.toFixed(2)}\n- Total:`);
+        } else if (resultText.includes('*Desglose:*')) {
+          resultText = resultText.replace('*Desglose:*', `*Desglose:*\n- Descuento LE CLUB 8: -$${order.loyalty_discount.toFixed(2)}`);
+        }
+      }
+
+      return resultText
         .replace(/{nombre}/g, order.client_name || '')
         .replace(/{telefono}/g, order.client_phone || '')
         .replace(/{direccion}/g, order.delivery_address || '')

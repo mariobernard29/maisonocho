@@ -654,7 +654,7 @@ export default function CheckoutPage() {
                     {/* LE CLUB 8 Loyalty Balance Section */}
                     {loyaltyProfile && (
                       <div className="bg-[#0A0F0A] border border-gold/25 p-5 rounded-lg text-xs space-y-3 mt-4 text-[#FAF8F5] shadow-lg">
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 sm:gap-2">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
                             <span className="font-semibold tracking-wider uppercase text-gold">LE CLUB 8</span>

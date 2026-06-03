@@ -194,7 +194,16 @@ export default function AdminOrders() {
     const deliveryInstructions = order.delivery_instructions || 'Sin instrucciones adicionales';
     const notesText = order.notes || 'Sin comentarios adicionales';
 
-    const compiledText = clientTemplate
+    let resultText = clientTemplate;
+    if (!resultText.includes('{descuento_club}') && order.loyalty_discount && order.loyalty_discount > 0) {
+      if (resultText.includes('- Total:')) {
+        resultText = resultText.replace('- Total:', `- Descuento LE CLUB 8: -$${order.loyalty_discount.toFixed(2)}\n- Total:`);
+      } else if (resultText.includes('*Desglose:*')) {
+        resultText = resultText.replace('*Desglose:*', `*Desglose:*\n- Descuento LE CLUB 8: -$${order.loyalty_discount.toFixed(2)}`);
+      }
+    }
+
+    const compiledText = resultText
       .replace(/{nombre}/g, order.client_name || '')
       .replace(/{telefono}/g, order.client_phone || '')
       .replace(/{direccion}/g, order.delivery_address || '')
@@ -205,6 +214,8 @@ export default function AdminOrders() {
       .replace(/{subtotal}/g, (order.subtotal || 0).toFixed(2))
       .replace(/{envio}/g, (order.delivery_fee || 0).toFixed(2))
       .replace(/{total}/g, (order.total || 0).toFixed(2))
+      .replace(/{descuento_club}/g, (order.loyalty_discount || 0).toFixed(2))
+      .replace(/{recompensa_ganada}/g, (order.loyalty_earned || 0).toFixed(2))
       .replace(/{fecha}/g, order.delivery_date || '')
       .replace(/{hora}/g, order.delivery_time_slot || '')
       .replace(/{forma_pago}/g, paymentMethodText);
@@ -562,6 +573,12 @@ export default function AdminOrders() {
                   <span>Subtotal</span>
                   <span>${selectedOrder.subtotal.toFixed(2)}</span>
                 </div>
+                {selectedOrder.loyalty_discount !== undefined && selectedOrder.loyalty_discount > 0 && (
+                  <div className="flex justify-between items-center text-emerald-400 font-semibold">
+                    <span>Descuento LE CLUB 8</span>
+                    <span>-${selectedOrder.loyalty_discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-crema/60">
                   <span>Envío ({selectedOrder.distance_km} km)</span>
                   <span>${selectedOrder.delivery_fee.toFixed(2)}</span>
@@ -914,6 +931,9 @@ export default function AdminOrders() {
           </div>
           <div className="text-right text-[11px] space-y-1">
             <p>Subtotal: ${selectedOrder.subtotal.toFixed(2)}</p>
+            {selectedOrder.loyalty_discount !== undefined && selectedOrder.loyalty_discount > 0 && (
+              <p className="text-green-700">Descuento LE CLUB 8: -${selectedOrder.loyalty_discount.toFixed(2)}</p>
+            )}
             <p>Envío: ${selectedOrder.delivery_fee.toFixed(2)}</p>
             <p className="font-bold">Total: ${selectedOrder.total.toFixed(2)}</p>
           </div>

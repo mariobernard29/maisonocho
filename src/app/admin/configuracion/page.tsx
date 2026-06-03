@@ -868,7 +868,8 @@ export default function AdminConfiguracion() {
                   Variables utilizables: &#123;nombre&#125;, &#123;folio&#125;,
                   &#123;fecha&#125;, &#123;hora&#125;, &#123;productos&#125;,
                   &#123;direccion&#125;, &#123;instrucciones&#125;,
-                  &#123;subtotal&#125;, &#123;envio&#125;, &#123;total&#125;
+                  &#123;subtotal&#125;, &#123;envio&#125;, &#123;total&#125;,
+                  &#123;descuento_club&#125;, &#123;recompensa_ganada&#125;
                 </span>
               </div>
             </div>
@@ -903,6 +904,7 @@ export default function AdminConfiguracion() {
                   &#123;direccion&#125;, &#123;instrucciones&#125;,
                   &#123;comentarios&#125;, &#123;productos&#125;,
                   &#123;subtotal&#125;, &#123;envio&#125;, &#123;total&#125;,
+                  &#123;descuento_club&#125;, &#123;recompensa_ganada&#125;,
                   &#123;forma_pago&#125;, &#123;waLink&#125;
                 </span>
               </div>
