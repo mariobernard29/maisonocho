@@ -1244,9 +1244,6 @@ export default function POSPage() {
                   alt="Maison VIII Logo"
                   style={{ maxWidth: '40mm', margin: '0 auto 1mm auto', display: 'block', filter: 'grayscale(1) brightness(0)' }}
                 />
-                <h2 className="editorial-title text-base font-bold tracking-widest text-[#000000]">
-                  M A I S O N  V I I I
-                </h2>
                 <p style={{ fontSize: '8px', letterSpacing: '0.12em', opacity: 0.8, textTransform: 'uppercase' }}>
                   EL ARTE DE CELEBRAR LO EXTRAORDINARIO
                 </p>
