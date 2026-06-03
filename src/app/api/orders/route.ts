@@ -64,6 +64,8 @@ export async function POST(request: Request) {
         .replace(/{subtotal}/g, (order.subtotal || 0).toFixed(2))
         .replace(/{envio}/g, (order.delivery_fee || 0).toFixed(2))
         .replace(/{total}/g, (order.total || 0).toFixed(2))
+        .replace(/{descuento_club}/g, (order.loyalty_discount || 0).toFixed(2))
+        .replace(/{recompensa_ganada}/g, (order.loyalty_earned || 0).toFixed(2))
         .replace(/{fecha}/g, order.delivery_date || '')
         .replace(/{hora}/g, order.delivery_time_slot || '')
         .replace(/{forma_pago}/g, paymentMethodText)

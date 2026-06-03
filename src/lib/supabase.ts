@@ -217,19 +217,27 @@ export const db = {
  
       if (itemsError) throw itemsError;
  
-      // Update customer total spend
+      // Update customer total spend and loyalty balance
       const { data: customer } = await supabase!
         .from('customers')
         .select('*')
         .eq('phone', order.client_phone)
         .single();
  
+      const discountUsed = Number(order.loyalty_discount || 0);
+      const pointsEarned = Number(order.loyalty_earned || 0);
+
       if (customer) {
+        const balance = Number(customer.loyalty_balance || 0);
+        const accumulated = Number(customer.loyalty_accumulated || 0);
+
         await supabase!
           .from('customers')
           .update({
             orders_count: (customer.orders_count || 0) + 1,
-            total_spent: (customer.total_spent || 0) + order.total
+            total_spent: (customer.total_spent || 0) + order.total,
+            loyalty_balance: Math.max(0, balance - discountUsed + pointsEarned),
+            loyalty_accumulated: accumulated + pointsEarned
           })
           .eq('phone', order.client_phone);
       } else {
@@ -241,6 +249,8 @@ export const db = {
             address_default: order.delivery_address,
             orders_count: 1,
             total_spent: order.total,
+            loyalty_balance: pointsEarned,
+            loyalty_accumulated: pointsEarned,
             tags: ['Nuevo']
           });
       }
@@ -521,6 +531,144 @@ export const db = {
     } catch (e) {
       console.warn('Supabase markAllNotificationsAsRead failed, falling back to Mock:', e);
       dbMock.markAllNotificationsAsRead();
+    }
+  },
+
+  async signUpLoyalty(email: string, phone: string, name: string, password: string): Promise<Customer> {
+    if (!isSupabaseConfigured) return dbMock.signUpLoyalty(email, phone, name, password);
+    try {
+      const { data: authData, error: authError } = await supabase!.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            phone
+          }
+        }
+      });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Error al registrar usuario.');
+
+      const { data: customer, error: selectError } = await supabase!
+        .from('customers')
+        .select('*')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      let finalCustomer: Customer;
+      if (customer) {
+        const { data: updated, error: linkError } = await supabase!
+          .from('customers')
+          .update({
+            email,
+            auth_user_id: authData.user.id,
+            name
+          })
+          .eq('id', customer.id)
+          .select()
+          .single();
+        if (linkError) throw linkError;
+        finalCustomer = updated;
+      } else {
+        const { data: inserted, error: insertError } = await supabase!
+          .from('customers')
+          .insert({
+            name,
+            phone,
+            email,
+            auth_user_id: authData.user.id,
+            loyalty_balance: 0.00,
+            loyalty_accumulated: 0.00,
+            total_spent: 0.00,
+            orders_count: 0,
+            tags: ['Club 8']
+          })
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        finalCustomer = inserted;
+      }
+
+      return finalCustomer;
+    } catch (e: any) {
+      console.error('Supabase signUpLoyalty failed:', e);
+      throw e;
+    }
+  },
+
+  async signInLoyalty(email: string, password: string): Promise<Customer> {
+    if (!isSupabaseConfigured) return dbMock.signInLoyalty(email, password);
+    try {
+      const { data: authData, error: authError } = await supabase!.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('Error al iniciar sesión.');
+
+      const { data: customer, error: fetchError } = await supabase!
+        .from('customers')
+        .select('*')
+        .eq('auth_user_id', authData.user.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      
+      if (!customer) {
+        const { data: customerByEmail, error: emailError } = await supabase!
+          .from('customers')
+          .select('*')
+          .eq('email', email)
+          .maybeSingle();
+        if (emailError) throw emailError;
+
+        if (customerByEmail) {
+          const { data: updated } = await supabase!
+            .from('customers')
+            .update({ auth_user_id: authData.user.id })
+            .eq('id', customerByEmail.id)
+            .select()
+            .single();
+          return updated || customerByEmail;
+        }
+
+        throw new Error('Perfil de fidelización no encontrado.');
+      }
+
+      return customer;
+    } catch (e: any) {
+      console.error('Supabase signInLoyalty failed:', e);
+      throw e;
+    }
+  },
+
+  async getCurrentUserLoyalty(): Promise<Customer | null> {
+    if (!isSupabaseConfigured) return dbMock.getCurrentUserLoyalty();
+    try {
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
+      if (userError || !user) return null;
+
+      const { data: customer, error: fetchError } = await supabase!
+        .from('customers')
+        .select('*')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+      if (fetchError) throw fetchError;
+
+      return customer;
+    } catch (e) {
+      console.warn('Supabase getCurrentUserLoyalty failed:', e);
+      return null;
+    }
+  },
+
+  async signOutLoyalty(): Promise<void> {
+    if (!isSupabaseConfigured) return dbMock.signOutLoyalty();
+    try {
+      await supabase!.auth.signOut();
+    } catch (e) {
+      console.error('Supabase signOutLoyalty failed:', e);
     }
   }
 };

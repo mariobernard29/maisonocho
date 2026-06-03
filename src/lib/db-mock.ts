@@ -359,9 +359,19 @@ class DBService {
       // Create or update customer stats
       const customers = this.getCustomers();
       const clientCust = customers.find(c => c.phone === order.client_phone);
+      
+      const discountUsed = Number(order.loyalty_discount || 0);
+      const pointsEarned = Number(order.loyalty_earned || 0);
+
       if (clientCust) {
         clientCust.orders_count += 1;
         clientCust.total_spent += order.total;
+        
+        const balance = Number(clientCust.loyalty_balance || 0);
+        const accumulated = Number(clientCust.loyalty_accumulated || 0);
+        
+        clientCust.loyalty_balance = Math.max(0, balance - discountUsed + pointsEarned);
+        clientCust.loyalty_accumulated = accumulated + pointsEarned;
         this.saveCustomer(clientCust);
       } else {
         this.saveCustomer({
@@ -371,6 +381,8 @@ class DBService {
           address_default: order.delivery_address,
           total_spent: order.total,
           orders_count: 1,
+          loyalty_balance: pointsEarned,
+          loyalty_accumulated: pointsEarned,
           tags: ['Nuevo'],
           created_at: new Date().toISOString()
         });
@@ -500,6 +512,68 @@ class DBService {
   markAllNotificationsAsRead(): void {
     const list = this.getNotifications().map(n => ({ ...n, read: true }));
     this.set('notifications', list);
+  }
+
+  // Le Club 8 Loyalty Auth Mock Services
+  signUpLoyalty(email: string, phone: string, name: string, password: string): Customer {
+    const customers = this.getCustomers();
+    const existingEmail = customers.find(c => c.email?.toLowerCase() === email.toLowerCase());
+    if (existingEmail) throw new Error('El correo electrónico ya está registrado.');
+
+    let clientCust = customers.find(c => c.phone === phone);
+    if (clientCust) {
+      // update existing phone profile to join Le Club 8
+      clientCust.email = email;
+      clientCust.name = name;
+      clientCust.loyalty_balance = clientCust.loyalty_balance || 0;
+      clientCust.loyalty_accumulated = clientCust.loyalty_accumulated || 0;
+      this.saveCustomer(clientCust);
+    } else {
+      // create new loyalty profile
+      clientCust = this.saveCustomer({
+        id: generateUUID(),
+        name,
+        phone,
+        email,
+        total_spent: 0,
+        orders_count: 0,
+        loyalty_balance: 0,
+        loyalty_accumulated: 0,
+        tags: ['Club 8'],
+        created_at: new Date().toISOString()
+      });
+    }
+
+    // save login credentials in mock storage
+    const mockUsers: any[] = this.get('mock_loyalty_users', []);
+    mockUsers.push({ email, password, customerId: clientCust.id });
+    this.set('mock_loyalty_users', mockUsers);
+
+    // set session
+    this.set('mock_loyalty_session', clientCust);
+    return clientCust;
+  }
+
+  signInLoyalty(email: string, password: string): Customer {
+    const mockUsers: any[] = this.get('mock_loyalty_users', []);
+    const user = mockUsers.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+    if (!user) throw new Error('Credenciales incorrectas.');
+
+    const customers = this.getCustomers();
+    const clientCust = customers.find(c => c.id === user.customerId);
+    if (!clientCust) throw new Error('Perfil de cliente no encontrado.');
+
+    // set session
+    this.set('mock_loyalty_session', clientCust);
+    return clientCust;
+  }
+
+  getCurrentUserLoyalty(): Customer | null {
+    return this.get('mock_loyalty_session', null);
+  }
+
+  signOutLoyalty(): void {
+    this.set('mock_loyalty_session', null);
   }
 }
 

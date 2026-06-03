@@ -39,6 +39,10 @@ export interface Customer {
   id: string;
   name: string;
   phone: string;
+  email?: string;
+  loyalty_balance?: number;
+  loyalty_accumulated?: number;
+  auth_user_id?: string;
   address_default?: string;
   total_spent: number;
   orders_count: number;
@@ -81,6 +85,8 @@ export interface Order {
   notes?: string;
   twilio_sent?: boolean;
   items?: OrderItem[];
+  loyalty_discount?: number;
+  loyalty_earned?: number;
   created_at?: string;
 }
 

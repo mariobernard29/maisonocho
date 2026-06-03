@@ -34,6 +34,8 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [loyaltyProfile, setLoyaltyProfile] = useState<any>(null);
+  const [useLoyalty, setUseLoyalty] = useState<boolean>(false);
 
   // Logistics states
   const [zones, setZones] = useState<DeliveryZone[]>([]);
@@ -71,13 +73,22 @@ export default function CheckoutPage() {
     setMounted(true);
     async function loadLogistics() {
       try {
-        const [zData, dData, sData] = await Promise.all([
+        const [zData, dData, sData, lProfile] = await Promise.all([
           db.getDeliveryZones(),
           db.getBlockedDates(),
-          db.getSettings()
+          db.getSettings(),
+          db.getCurrentUserLoyalty()
         ]);
         setZones(zData);
         setBlockedDates(dData);
+        
+        if (lProfile) {
+          setLoyaltyProfile(lProfile);
+          setValue('name', lProfile.name);
+          setValue('phone', lProfile.phone);
+        }
+        
+        // Dynamic time slots & rest days if settings exist
         if (sData) {
           if (sData.time_slots && Array.isArray(sData.time_slots)) {
             setTimeSlots(sData.time_slots);
@@ -91,7 +102,7 @@ export default function CheckoutPage() {
       }
     }
     loadLogistics();
-  }, []);
+  }, [setValue]);
 
   // Reset distance when address changes to force recalculation
   useEffect(() => {
@@ -295,7 +306,12 @@ export default function CheckoutPage() {
     setSubmitting(true);
     try {
       const subtotal = cart.getSubtotal();
-      const total = subtotal + shippingFee;
+      
+      // Calculate Le Club 8 Loyalty discount and earnings
+      const availableBalance = loyaltyProfile ? Number(loyaltyProfile.loyalty_balance || 0) : 0;
+      const discountAmount = useLoyalty ? Math.min(availableBalance, subtotal + shippingFee) : 0;
+      const finalTotal = Math.max(0, subtotal + shippingFee - discountAmount);
+      const earnedRewards = Number((subtotal * 0.01).toFixed(2));
 
       const orderObj = {
         id: generateUUID(),
@@ -307,14 +323,16 @@ export default function CheckoutPage() {
         delivery_instructions: data.deliveryInstructions || '',
         delivery_fee: shippingFee,
         subtotal,
-        total,
+        total: finalTotal,
         status: 'pendiente' as const,
         delivery_date: data.deliveryDate,
         delivery_time_slot: data.deliveryTimeSlot,
         payment_method: data.paymentMethod,
         payment_status: 'pendiente' as const,
         notes: data.notes || '',
-        twilio_sent: false
+        twilio_sent: false,
+        loyalty_discount: discountAmount,
+        loyalty_earned: loyaltyProfile ? earnedRewards : 0
       };
 
       const orderItems = cart.items.map(item => ({
@@ -353,7 +371,10 @@ export default function CheckoutPage() {
   if (!mounted) return null;
 
   const subtotal = cart.getSubtotal();
-  const total = subtotal + shippingFee;
+  const availableBalance = loyaltyProfile ? Number(loyaltyProfile.loyalty_balance || 0) : 0;
+  const discountAmount = useLoyalty ? Math.min(availableBalance, subtotal + shippingFee) : 0;
+  const total = Math.max(0, subtotal + shippingFee - discountAmount);
+  const earnedRewards = subtotal * 0.01;
 
   return (
     <div className="flex flex-col min-h-screen bg-crema">
@@ -630,6 +651,44 @@ export default function CheckoutPage() {
                       </label>
                     </div>
 
+                    {/* Le Club 8 Loyalty Balance Section */}
+                    {loyaltyProfile && (
+                      <div className="bg-[#0A0F0A] border border-gold/25 p-5 rounded-lg text-xs space-y-3 mt-4 text-[#FAF8F5] shadow-lg">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+                            <span className="font-semibold tracking-wider uppercase text-gold">Le Club 8</span>
+                          </div>
+                          <span className="font-mono text-gold font-bold">Saldo disponible: ${(loyaltyProfile.loyalty_balance || 0).toFixed(2)} MXN</span>
+                        </div>
+                        <p className="text-[11px] text-crema/70 leading-relaxed font-light">
+                          Como miembro de Le Club 8, puedes aplicar tu saldo disponible como descuento inmediato para este pedido.
+                        </p>
+                        
+                        {Number(loyaltyProfile.loyalty_balance || 0) > 0 ? (
+                          <label className="flex items-center gap-3 bg-[#121A12]/40 border border-gold/10 p-3 rounded cursor-pointer hover:border-gold/30 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={useLoyalty}
+                              onChange={(e) => setUseLoyalty(e.target.checked)}
+                              className="w-4 h-4 accent-gold cursor-pointer"
+                            />
+                            <span className="text-crema text-[11px] font-medium">
+                              Aplicar descuento de Le Club 8 para este pedido (ahorras <span className="font-bold text-gold">${Math.min(Number(loyaltyProfile.loyalty_balance || 0), subtotal + shippingFee).toFixed(2)}</span>)
+                            </span>
+                          </label>
+                        ) : (
+                          <div className="bg-[#121A12]/30 border border-gold/5 p-3 rounded text-[10px] text-crema/40 italic">
+                            No tienes saldo disponible en este momento. ¡Sigue comprando para acumular el 1%!
+                          </div>
+                        )}
+                        
+                        <div className="text-[10px] text-gold/85 italic">
+                          ✨ Ganarás <span className="font-bold font-mono">${(subtotal * 0.01).toFixed(2)}</span> de recompensa (1%) en este pedido.
+                        </div>
+                      </div>
+                    )}
+
                     <div className="bg-beige/40 p-4 rounded border border-olive/5 text-xs text-olive/70 font-light space-y-2 mt-4">
                       <p className="font-semibold text-olive">Instrucciones Importantes:</p>
                       <p>&bull; Para pagos con **Transferencia** o **Link de pago**, solicitamos enviar el comprobante de pago vía WhatsApp para que cocina proceda con la preparación.</p>
@@ -782,10 +841,21 @@ export default function CheckoutPage() {
                     <span>Envío</span>
                     <span className="font-medium text-olive">{shippingFee > 0 ? `$${shippingFee.toFixed(2)}` : 'Calculando...'}</span>
                   </div>
+                  {useLoyalty && discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-xs text-green-700 font-medium">
+                      <span>Descuento Le Club 8</span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-sm border-t border-olive/5 pt-3">
                     <span className="editorial-title text-base text-olive font-semibold">Total</span>
                     <span className="font-bold text-olive text-lg">${total.toFixed(2)}</span>
                   </div>
+                  {loyaltyProfile && (
+                    <div className="text-[10px] text-gold/80 text-right italic pt-1 border-t border-dashed border-olive/10">
+                      Acumularás +${earnedRewards.toFixed(2)} MXN en Le Club 8
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -51,6 +51,12 @@ export default function Header() {
               >
                 Menú
               </Link>
+              <Link
+                href="/club"
+                className="text-sm font-medium tracking-wide text-charcoal hover:text-gold transition-colors duration-300"
+              >
+                Le Club 8
+              </Link>
               <button
                 onClick={() => setIsContactOpen(true)}
                 className="text-sm font-medium tracking-wide text-charcoal hover:text-gold transition-colors duration-300 focus:outline-none"
@@ -107,6 +113,13 @@ export default function Header() {
               className="block text-base font-medium text-charcoal hover:text-gold py-2"
             >
               Menú
+            </Link>
+            <Link
+              href="/club"
+              onClick={() => setIsOpen(false)}
+              className="block text-base font-medium text-charcoal hover:text-gold py-2"
+            >
+              Le Club 8
             </Link>
             <button
               onClick={() => {
