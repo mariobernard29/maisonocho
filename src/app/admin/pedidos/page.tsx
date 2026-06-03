@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingBag, Eye, Printer, PhoneCall, RefreshCw, Download, Edit, Trash2 } from 'lucide-react';
+import { Search, ShoppingBag, Eye, Printer, PhoneCall, RefreshCw, Download, Edit, Trash2, MessageSquare } from 'lucide-react';
 import { db } from '../../../lib/supabase';
 import { Order, OrderStatus } from '../../../types';
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   // Search & Filter
@@ -33,17 +34,21 @@ export default function AdminOrders() {
   const [editItems, setEditItems] = useState<any[]>([]);
 
   useEffect(() => {
-    async function loadOrders() {
+    async function loadOrdersAndSettings() {
       try {
-        const data = await db.getOrders();
-        setOrders(data);
+        const [ordersData, settingsData] = await Promise.all([
+          db.getOrders(),
+          db.getSettings()
+        ]);
+        setOrders(ordersData);
+        setSettings(settingsData);
       } catch (e) {
         console.error(e);
       } finally {
         setLoading(false);
       }
     }
-    loadOrders();
+    loadOrdersAndSettings();
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
@@ -161,6 +166,57 @@ export default function AdminOrders() {
       console.error(e);
       alert('Notificación simulada en consola de desarrollo.');
     }
+  };
+
+  // Compile WhatsApp Client confirmation link
+  const getWhatsAppConfirmationLink = (order: Order) => {
+    if (!order) return '#';
+
+    // Format items list
+    const productListText = (order.items || [])
+      .map((item: any) => {
+        const variantsText = Object.keys(item.variant_choices || {}).length > 0
+          ? ` (${Object.entries(item.variant_choices).map(([k, v]) => v).join(', ')})`
+          : '';
+        return `${item.quantity}x ${item.product_name}${variantsText}`;
+      })
+      .join(', ');
+
+    const clientTemplate = settings?.whatsapp_template_client ||
+      "¡Hola {nombre}! Tu pedido #{folio} ha sido confirmado para entrega el {fecha} en el horario de {hora}. ✨\n\n*Contenido del pedido:*\n{productos}\n\n*Dirección de entrega:* {direccion}\n*Instrucciones de entrega:* {instrucciones}\n\n*Desglose:*\n- Subtotal: ${subtotal}\n- Envío: ${envio}\n- Total: ${total}\n\n¡Muchas gracias por elegir la distinción de Maison VIII! 🥐";
+
+    const paymentMethodText = {
+      efectivo: 'Efectivo (Pago contra entrega)',
+      transferencia: 'Transferencia Bancaria',
+      link_pago: 'Tarjeta (Link de pago)'
+    }[order.payment_method as 'efectivo' | 'transferencia' | 'link_pago'] || order.payment_method || 'No especificado';
+
+    const deliveryInstructions = order.delivery_instructions || 'Sin instrucciones adicionales';
+    const notesText = order.notes || 'Sin comentarios adicionales';
+
+    const compiledText = clientTemplate
+      .replace(/{nombre}/g, order.client_name || '')
+      .replace(/{telefono}/g, order.client_phone || '')
+      .replace(/{direccion}/g, order.delivery_address || '')
+      .replace(/{instrucciones}/g, deliveryInstructions)
+      .replace(/{comentarios}/g, notesText)
+      .replace(/{productos}/g, productListText || '')
+      .replace(/{folio}/g, order.order_number || '')
+      .replace(/{subtotal}/g, (order.subtotal || 0).toFixed(2))
+      .replace(/{envio}/g, (order.delivery_fee || 0).toFixed(2))
+      .replace(/{total}/g, (order.total || 0).toFixed(2))
+      .replace(/{fecha}/g, order.delivery_date || '')
+      .replace(/{hora}/g, order.delivery_time_slot || '')
+      .replace(/{forma_pago}/g, paymentMethodText);
+
+    let cleanPhone = order.client_phone.replace(/\D/g, '');
+    if (cleanPhone.length === 10) {
+      cleanPhone = `52${cleanPhone}`;
+    } else if (cleanPhone.length === 12 && cleanPhone.startsWith('521')) {
+      cleanPhone = `52${cleanPhone.substring(3)}`;
+    }
+
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(compiledText)}`;
   };
 
   // Export to CSV helper
@@ -392,12 +448,22 @@ export default function AdminOrders() {
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </button>
-                        
-                        {/* WhatsApp Resend */}
+                        {/* Confirm Client WhatsApp */}
+                        <a
+                          href={getWhatsAppConfirmationLink(o)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded bg-[#121A12] hover:bg-green-600 hover:text-white border border-green-600/35 text-green-500 transition-colors inline-flex items-center justify-center"
+                          title="Confirmar por WhatsApp (Cliente)"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        </a>
+
+                        {/* Alert Admin */}
                         <button
                           onClick={() => handleResendWhatsApp(o)}
-                          className="p-1.5 rounded bg-[#121A12] hover:bg-green-600 hover:text-white border border-gold/15 text-gold transition-colors"
-                          title="Enviar WhatsApp"
+                          className="p-1.5 rounded bg-[#121A12] hover:bg-[#D4AF37] hover:text-olive border border-gold/15 text-gold transition-colors"
+                          title="Re-enviar Alerta a Admin"
                         >
                           <PhoneCall className="w-3.5 h-3.5" />
                         </button>
@@ -557,11 +623,29 @@ export default function AdminOrders() {
                 </div>
               </div>
 
-              {/* Printing Utilities */}
-              <div className="border-t border-gold/15 pt-4 flex gap-4">
+              {/* WhatsApp & Printing Utilities */}
+              <div className="border-t border-gold/15 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <a
+                  href={getWhatsAppConfirmationLink(selectedOrder)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white hover:bg-[#128C7E] py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md font-bold text-center"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>Confirmar Cliente</span>
+                </a>
+
+                <button
+                  onClick={() => handleResendWhatsApp(selectedOrder)}
+                  className="inline-flex items-center justify-center gap-2 bg-[#121A12] border border-gold/25 text-gold hover:bg-gold hover:text-olive py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300"
+                >
+                  <PhoneCall className="w-4 h-4" />
+                  <span>Alertar Admin</span>
+                </button>
+
                 <button
                   onClick={handlePrint}
-                  className="flex-1 inline-flex items-center justify-center gap-2 bg-[#121A12] border border-gold/25 text-gold hover:bg-gold hover:text-olive py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300"
+                  className="inline-flex items-center justify-center gap-2 bg-[#121A12] border border-gold/25 text-gold hover:bg-gold hover:text-olive py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir Ticket</span>

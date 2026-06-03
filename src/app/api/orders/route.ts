@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { db } from '../../../lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -18,24 +19,28 @@ export async function POST(request: Request) {
       })
       .join(', ');
 
-    // 1. WhatsApp Template Client Compiler
-    const rawClientTemplate = 
-      "¡Su pedido se ha realizado con éxito! ✨\n\nHola {nombre},\nTu pedido en *Maison VIII* ha sido registrado.\n\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} en el horario de {hora}\n\n¡Gracias por elegir la distinción de Maison VIII! 🥐";
+    // Fetch dynamic configuration settings
+    const settings = await db.getSettings();
+    const adminNumberRaw = settings.whatsapp_number_admin || process.env.ADMIN_WHATSAPP_NUMBER || '+525512345678';
     
-    const clientMessage = rawClientTemplate
-      .replace(/{nombre}/g, order.client_name)
-      .replace(/{productos}/g, productListText)
-      .replace(/{total}/g, order.total.toFixed(2))
-      .replace(/{fecha}/g, order.delivery_date)
-      .replace(/{hora}/g, order.delivery_time_slot);
+    // Ensure admin phone starts with '+'
+    const cleanAdminPhoneOnly = adminNumberRaw.replace(/\D/g, '');
+    const adminNumber = `+${cleanAdminPhoneOnly}`;
 
-    // 2. WhatsApp Template Admin Compiler
-    let cleanPhone = order.client_phone.replace(/\D/g, '');
-    if (cleanPhone.length === 10) {
-      cleanPhone = `52${cleanPhone}`;
+    // Default templates if not configured
+    const rawClientTemplate = settings.whatsapp_template_client || 
+      "¡Hola {nombre}! Tu pedido #{folio} ha sido confirmado para entrega el {fecha} en el horario de {hora}. ✨\n\n*Contenido del pedido:*\n{productos}\n\n*Dirección de entrega:* {direccion}\n*Instrucciones de entrega:* {instrucciones}\n\n*Desglose:*\n- Subtotal: ${subtotal}\n- Envío: ${envio}\n- Total: ${total}\n\n¡Muchas gracias por elegir la distinción de Maison VIII! 🥐";
+
+    const rawAdminTemplate = settings.whatsapp_template_admin || 
+      "🚨 *Nuevo pedido Maison VIII* 🚨\n\n*Folio:* {folio}\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Fecha de Entrega:* {fecha}\n*Hora de Entrega:* {hora}\n*Lugar de Entrega:* {direccion}\n*Instrucciones:* {instrucciones}\n*Comentarios:* {comentarios}\n\n*Artículos:* \n{productos}\n\n*Desglose:*\n- Subtotal: ${subtotal}\n- Envío: ${envio}\n- Total: ${total}\n*Forma de Pago:* {forma_pago}\n\n👉 *Confirmar pedido (Click para abrir WhatsApp):*\n{waLink}";
+
+    // Format phone number for WhatsApp link
+    let cleanClientPhone = order.client_phone.replace(/\D/g, '');
+    if (cleanClientPhone.length === 10) {
+      cleanClientPhone = `52${cleanClientPhone}`;
+    } else if (cleanClientPhone.length === 12 && cleanClientPhone.startsWith('521')) {
+      cleanClientPhone = `52${cleanClientPhone.substring(3)}`;
     }
-    const confirmText = `Hola ${order.client_name}, tu pedido ha sido confirmado y está en preparación para entrega el ${order.delivery_date} en el horario de ${order.delivery_time_slot}. ✨`;
-    const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(confirmText)}`;
 
     const paymentMethodText = {
       efectivo: 'Efectivo (Pago contra entrega)',
@@ -44,32 +49,39 @@ export async function POST(request: Request) {
     }[order.payment_method as 'efectivo' | 'transferencia' | 'link_pago'] || order.payment_method || 'No especificado';
 
     const deliveryInstructions = order.delivery_instructions || 'Sin instrucciones adicionales';
-    const notesText = order.notes ? `\n*Notas Especiales:* ${order.notes}\n` : '';
+    const notesText = order.notes || 'Sin comentarios adicionales';
 
-    const adminMessage = `🚨 *Nuevo pedido Maison VIII*
+    // Helper to replace all variables in a template
+    const compileTemplate = (template: string, linkPlaceholder?: string) => {
+      return template
+        .replace(/{nombre}/g, order.client_name || '')
+        .replace(/{telefono}/g, order.client_phone || '')
+        .replace(/{direccion}/g, order.delivery_address || '')
+        .replace(/{instrucciones}/g, deliveryInstructions)
+        .replace(/{comentarios}/g, notesText)
+        .replace(/{productos}/g, productListText || '')
+        .replace(/{folio}/g, order.order_number || '')
+        .replace(/{subtotal}/g, (order.subtotal || 0).toFixed(2))
+        .replace(/{envio}/g, (order.delivery_fee || 0).toFixed(2))
+        .replace(/{total}/g, (order.total || 0).toFixed(2))
+        .replace(/{fecha}/g, order.delivery_date || '')
+        .replace(/{hora}/g, order.delivery_time_slot || '')
+        .replace(/{forma_pago}/g, paymentMethodText)
+        .replace(/{waLink}/g, linkPlaceholder || '');
+    };
 
-*Cliente:* ${order.client_name}
-*Teléfono:* ${order.client_phone}
-*Dirección:* ${order.delivery_address}
-*Referencias:* ${deliveryInstructions}
+    // 1. Compile Client Confirmation Message
+    const clientMessage = compileTemplate(rawClientTemplate);
+    
+    // 2. Generate Clickable WhatsApp Link for client confirmation
+    const waLink = `https://wa.me/${cleanClientPhone}?text=${encodeURIComponent(clientMessage)}`;
 
-*Pedido:* ${productListText}
+    // 3. Compile Admin Notification Message (with the link embedded)
+    const adminMessage = compileTemplate(rawAdminTemplate, waLink);
 
-*Desglose:*
-- Subtotal: $${order.subtotal.toFixed(2)}
-- Envío: $${order.delivery_fee.toFixed(2)}
-- Total: $${order.total.toFixed(2)}
-
-*Forma de Pago:* ${paymentMethodText}
-*Entrega:* ${order.delivery_date} en el horario de ${order.delivery_time_slot}
-${notesText}
-*Confirmar pedido:*
-${waLink}`;
-
-    // 3. Trigger WhatsApp dispatch via YCloud or Twilio
+    // 4. Trigger WhatsApp dispatch to admin via YCloud or Twilio
     const ycloudApiKey = process.env.YCLOUD_API_KEY;
     const ycloudSender = process.env.YCLOUD_WHATSAPP_NUMBER; // e.g. +5266824214557
-    const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER || order.client_phone; // fallback to client for test
 
     const hasYcloud = ycloudApiKey && ycloudSender && !ycloudApiKey.includes('yourycloudapikey');
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
@@ -78,87 +90,34 @@ ${waLink}`;
     const hasTwilio = twilioSid && twilioToken && !twilioSid.includes('yourtwiliosid');
 
     if (hasYcloud) {
-      console.log('Sending real WhatsApp notifications via YCloud...');
+      console.log('Sending real WhatsApp admin notification via YCloud...');
       try {
-        const ycloudTemplateName = process.env.YCLOUD_TEMPLATE_NAME;
-
-        // Formulate Client Payload (Template or Text)
-        let clientPayload: any = {
-          from: ycloudSender,
-          to: order.client_phone.startsWith('+') ? order.client_phone : `+52${order.client_phone}`
-        };
-
-        if (ycloudTemplateName) {
-          clientPayload.type = 'template';
-          clientPayload.template = {
-            name: ycloudTemplateName,
-            language: {
-              code: 'es'
-            },
-            components: [
-              {
-                type: 'body',
-                parameters: [
-                  { type: 'text', text: order.client_name },
-                  { type: 'text', text: order.order_number },
-                  { type: 'text', text: `$${order.total.toFixed(2)}` },
-                  { type: 'text', text: order.delivery_date },
-                  { type: 'text', text: order.delivery_time_slot }
-                ]
-              }
-            ]
-          };
-        } else {
-          clientPayload.type = 'text';
-          clientPayload.text = {
-            body: clientMessage
-          };
-        }
-
-        // A. Send to Client
-        const resClient = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
+        const resAdmin = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
           method: 'POST',
           headers: {
             'X-API-Key': ycloudApiKey,
             'Content-Type': 'application/json',
             'accept': 'application/json'
           },
-          body: JSON.stringify(clientPayload)
+          body: JSON.stringify({
+            from: ycloudSender,
+            to: adminNumber,
+            type: 'text',
+            text: {
+              body: adminMessage
+            }
+          })
         });
-        const clientResult = await resClient.json();
-        console.log('YCloud Client response:', clientResult);
-
-        // B. Send to Admin (if not a simple client resend action)
-        if (!isResend) {
-          const resAdmin = await fetch('https://api.ycloud.com/v2/whatsapp/messages/sendDirectly', {
-            method: 'POST',
-            headers: {
-              'X-API-Key': ycloudApiKey,
-              'Content-Type': 'application/json',
-              'accept': 'application/json'
-            },
-            body: JSON.stringify({
-              from: ycloudSender,
-              to: adminNumber.startsWith('+') ? adminNumber : `+52${adminNumber}`,
-              type: 'text',
-              text: {
-                body: adminMessage
-              }
-            })
-          });
-          const adminResult = await resAdmin.json();
-          console.log('YCloud Admin response:', adminResult);
-        }
+        const adminResult = await resAdmin.json();
+        console.log('YCloud Admin response:', adminResult);
       } catch (err) {
         console.error('YCloud fetch dispatch failed:', err);
       }
     } else if (hasTwilio) {
-      console.log('Sending real WhatsApp notifications via Twilio...');
+      console.log('Sending real WhatsApp admin notification via Twilio...');
       try {
-        // We use native fetch to call Twilio REST API to avoid packaging errors
         const basicAuth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
         
-        // A. Send to Client
         await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
           method: 'POST',
           headers: {
@@ -167,26 +126,10 @@ ${waLink}`;
           },
           body: new URLSearchParams({
             From: twilioSender,
-            To: `whatsapp:${order.client_phone}`,
-            Body: clientMessage
+            To: adminNumber.startsWith('whatsapp:') ? adminNumber : `whatsapp:${adminNumber}`,
+            Body: adminMessage
           })
         });
-
-        // B. Send to Admin (if not a simple client resend action)
-        if (!isResend) {
-          await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Basic ${basicAuth}`,
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-              From: twilioSender,
-              To: `whatsapp:${adminNumber}`,
-              Body: adminMessage
-            })
-          });
-        }
       } catch (err) {
         console.error('Twilio fetch dispatch failed:', err);
       }
@@ -195,8 +138,6 @@ ${waLink}`;
       console.log('\n======================================================');
       console.log('📬 [SANDBOX MOCK WHATSAPP NOTIFICATIONS DISPATCHED]');
       console.log('======================================================');
-      console.log(`[CLIENT RECEIPT (To: ${order.client_phone})]:\n${clientMessage}`);
-      console.log('------------------------------------------------------');
       console.log(`[ADMIN NOTIFICATION (To: ${adminNumber})]:\n${adminMessage}`);
       console.log('======================================================\n');
     }

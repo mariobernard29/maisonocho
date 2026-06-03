@@ -756,7 +756,7 @@ export default function AdminConfiguracion() {
                   rows={8}
                   className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold font-mono leading-relaxed"
                 />
-                <span className="text-[9px] text-crema/40 block mt-1">Variables utilizables: &#123;nombre&#125;, &#123;productos&#125;, &#123;total&#125;, &#123;fecha&#125;, &#123;hora&#125;</span>
+                <span className="text-[9px] text-crema/40 block mt-1">Variables utilizables: &#123;nombre&#125;, &#123;folio&#125;, &#123;fecha&#125;, &#123;hora&#125;, &#123;productos&#125;, &#123;direccion&#125;, &#123;instrucciones&#125;, &#123;subtotal&#125;, &#123;envio&#125;, &#123;total&#125;</span>
               </div>
             </div>
 
@@ -777,7 +777,7 @@ export default function AdminConfiguracion() {
                   rows={8}
                   className="w-full bg-[#121A12] border border-gold/15 rounded p-3 text-xs text-crema focus:outline-none focus:border-gold font-mono leading-relaxed"
                 />
-                <span className="text-[9px] text-crema/40 block mt-1">Variables utilizables: &#123;nombre&#125;, &#123;telefono&#125;, &#123;direccion&#125;, &#123;productos&#125;, &#123;total&#125;, &#123;fecha&#125;, &#123;hora&#125;</span>
+                <span className="text-[9px] text-crema/40 block mt-1">Variables utilizables: &#123;folio&#125;, &#123;nombre&#125;, &#123;telefono&#125;, &#123;fecha&#125;, &#123;hora&#125;, &#123;direccion&#125;, &#123;instrucciones&#125;, &#123;comentarios&#125;, &#123;productos&#125;, &#123;subtotal&#125;, &#123;envio&#125;, &#123;total&#125;, &#123;forma_pago&#125;, &#123;waLink&#125;</span>
               </div>
             </div>
           </div>

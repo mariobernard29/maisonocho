@@ -220,6 +220,6 @@ insert into settings (key, value) values
 ('whatsapp_number_admin', '"+525512345678"'::jsonb),
 ('google_maps_origin_link', '"https://maps.app.goo.gl/dYh3H51t915W7yEw8"'::jsonb),
 ('delivery_kitchen_coords', '{"lat": 19.432608, "lng": -99.133209}'::jsonb),
-('whatsapp_template_client', '"Hola {nombre},\nTu pedido en *Maison VIII* ha sido confirmado. ✨\n\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} en el horario de {hora}\n\n¡Gracias por elegir la distinción de Maison VIII! 🥐"'::jsonb),
-('whatsapp_template_admin', '"🚨 *Nuevo pedido Maison VIII*\n\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Dirección:* {direccion}\n*Pedido:* {productos}\n*Total:* ${total}\n*Entrega:* {fecha} {hora}"'::jsonb)
+('whatsapp_template_client', '"¡Hola {nombre}! Tu pedido #{folio} ha sido confirmado para entrega el {fecha} en el horario de {hora}. ✨\n\n*Contenido del pedido:*\n{productos}\n\n*Dirección de entrega:* {direccion}\n*Instrucciones de entrega:* {instrucciones}\n\n*Desglose:*\n- Subtotal: ${subtotal}\n- Envío: ${envio}\n- Total: ${total}\n\n¡Muchas gracias por elegir la distinción de Maison VIII! 🥐"'::jsonb),
+('whatsapp_template_admin', '"🚨 *Nuevo pedido Maison VIII* 🚨\n\n*Folio:* {folio}\n*Cliente:* {nombre}\n*Teléfono:* {telefono}\n*Fecha de Entrega:* {fecha}\n*Hora de Entrega:* {hora}\n*Lugar de Entrega:* {direccion}\n*Instrucciones:* {instrucciones}\n*Comentarios:* {comentarios}\n\n*Artículos:* \n{productos}\n\n*Desglose:*\n- Subtotal: ${subtotal}\n- Envío: ${envio}\n- Total: ${total}\n*Forma de Pago:* {forma_pago}\n\n👉 *Confirmar pedido (Click para abrir WhatsApp):*\n{waLink}"'::jsonb)
 on conflict (key) do update set value = excluded.value;

@@ -82,7 +82,7 @@ function SuccessContent() {
           <span className="editorial-subtitle text-[10px] text-gold tracking-[0.25em] font-bold block">Pedido Recibido</span>
           <h1 className="editorial-title text-3xl sm:text-4xl text-olive font-light">¡Gracias por su preferencia!</h1>
           <p className="text-sm text-charcoal/70 max-w-md mx-auto leading-relaxed">
-            Su orden **{order.order_number}** ha sido ingresada en el sistema. Le hemos enviado una confirmación a su WhatsApp.
+            Su orden **{order.order_number}** ha sido ingresada en el sistema. Le enviaremos una confirmación a su WhatsApp a la brevedad.
           </p>
         </div>
 
