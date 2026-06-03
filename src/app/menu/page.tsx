@@ -118,7 +118,8 @@ function MenuContent() {
     const matchesCategory = selectedCategory === 'all' || prod.category_id === selectedCategory;
     const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           prod.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch && prod.is_available;
+    const isPOSOnly = prod.description?.includes('[POS-ONLY]');
+    return matchesCategory && matchesSearch && prod.is_available && !isPOSOnly;
   });
 
   return (

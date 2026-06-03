@@ -10,6 +10,7 @@ export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [printPayload, setPrintPayload] = useState<{ order: Order; items: any[]; mode: 'comanda' | 'ticket' } | null>(null);
   
   // Search & Filter
   const [statusFilter, setStatusFilter] = useState<string>('todos');
@@ -139,10 +140,15 @@ export default function AdminOrders() {
     }
   };
 
-  const handlePrint = () => {
-    if (typeof window !== 'undefined') {
+  const triggerPrint = (order: Order, mode: 'comanda' | 'ticket') => {
+    setPrintPayload({
+      order,
+      items: order.items || [],
+      mode
+    });
+    setTimeout(() => {
       window.print();
-    }
+    }, 150);
   };
 
   // Re-trigger/simulates sending WhatsApp notification
@@ -279,7 +285,8 @@ export default function AdminOrders() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <>
+      <div className="no-print space-y-6 animate-fade-in-up">
       {/* Filtering and Tools Row */}
       <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-[#0A0F0A] border border-gold/10 p-5 rounded-lg shadow-xl">
         {/* Status Horizontal Tabs */}
@@ -661,8 +668,16 @@ export default function AdminOrders() {
                 </button>
 
                 <button
-                  onClick={handlePrint}
-                  className="inline-flex items-center justify-center gap-2 bg-[#121A12] border border-gold/25 text-gold hover:bg-gold hover:text-olive py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300"
+                  onClick={() => triggerPrint(selectedOrder, 'comanda')}
+                  className="inline-flex items-center justify-center gap-2 bg-[#121A12] border border-gold/30 hover:border-gold hover:bg-gold/5 text-gold hover:text-gold-bright py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Imprimir Comanda</span>
+                </button>
+
+                <button
+                  onClick={() => triggerPrint(selectedOrder, 'ticket')}
+                  className="inline-flex items-center justify-center gap-2 bg-gold border border-gold/35 text-olive hover:bg-gold-bright py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Imprimir Ticket</span>
@@ -944,6 +959,215 @@ export default function AdminOrders() {
           )}
         </div>
       )}
-    </div>
+      </div>
+
+      {/* Standardized thermal print views (hidden from screen, shown on print dialog) */}
+      {printPayload && (
+        <div className={`print-section ${printPayload.mode === 'comanda' ? 'comanda-mode-container' : 'ticket-mode-container'}`}>
+          {printPayload.mode === 'comanda' ? (
+            /* COMANDA DE COCINA (Monospaced kitchen layout, large quantities, notes, instructions) */
+            <div className="space-y-4">
+              <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '2px', marginBottom: '3px' }}>
+                <h2 className="editorial-title" style={{ fontSize: '15px', fontWeight: 'bold', textTransform: 'uppercase' }}>MAISON VIII</h2>
+                <div style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '1px' }}>*** COMANDA DE COCINA ***</div>
+              </div>
+
+              <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
+                <p><strong>FOLIO:</strong> {printPayload.order.order_number}</p>
+                <p><strong>ENTREGA:</strong> {printPayload.order.delivery_date} ({printPayload.order.delivery_time_slot})</p>
+                <p><strong>CLIENTE:</strong> {printPayload.order.client_name} ({printPayload.order.client_phone})</p>
+                <p><strong>DIRECCIÓN:</strong> {printPayload.order.delivery_address}</p>
+                {printPayload.order.delivery_instructions && (
+                  <p style={{ marginTop: '1px', fontStyle: 'italic' }}>
+                    <strong>INDICACIONES:</strong> {printPayload.order.delivery_instructions}
+                  </p>
+                )}
+              </div>
+
+              <div className="ticket-divider-dashed" />
+
+              {/* Items Table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px dashed #000' }}>
+                    <th style={{ width: '20%', textAlign: 'left', fontSize: '11px', paddingBottom: '1px' }}>CANT</th>
+                    <th style={{ width: '80%', textAlign: 'left', fontSize: '11px', paddingBottom: '1px' }}>ARTÍCULO / VARIANTE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printPayload.items.map((item, idx) => {
+                    const variantsText = Object.keys(item.variant_choices || {}).length > 0
+                      ? Object.entries(item.variant_choices).map(([k, v]) => `${k}:${v}`).join(', ')
+                      : '';
+
+                    return (
+                      <tr key={idx} className="item-row">
+                        <td style={{ verticalAlign: 'top', padding: '3px 0' }}>
+                          <span className="qty-badge">x{item.quantity}</span>
+                        </td>
+                        <td style={{ verticalAlign: 'top', padding: '3px 0', fontSize: '12px' }}>
+                          <strong>{item.product_name}</strong>
+                          {variantsText && (
+                            <div className="item-variants" style={{ color: '#333', fontStyle: 'italic', marginTop: '1px' }}>
+                              {variantsText}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {/* Kitchen notes (in comanda mode, displayed prominently) */}
+              {printPayload.order.notes && (
+                <div className="comanda-notes" style={{ border: '2px solid #000', padding: '1.5mm', marginTop: '3mm', fontSize: '11px' }}>
+                  <strong>OBSERVACIONES (CLIENTE):</strong>
+                  <p style={{ marginTop: '1px', fontStyle: 'italic', fontWeight: 'bold' }}>{printPayload.order.notes}</p>
+                </div>
+              )}
+
+              <div style={{ marginTop: '5mm', textAlign: 'center', fontSize: '9px', opacity: 0.6 }}>
+                <p>Maison VIII - Cocina Interna</p>
+                <p style={{ marginTop: '1px' }}>Impreso el: {new Date().toLocaleString()}</p>
+              </div>
+            </div>
+          ) : (
+            /* TICKET DE VENTA (Elegant client ticket, matching checkout success) */
+            <div className="space-y-4">
+              {/* Elegant header banner */}
+              <div className="text-center pb-2 space-y-1">
+                <img
+                  src="/logos/logo_headersinfondo_500x200.png"
+                  className="ticket-logo"
+                  alt="Maison VIII Logo"
+                  style={{ maxWidth: '40mm', margin: '0 auto 1mm auto', display: 'block', filter: 'grayscale(1) brightness(0)' }}
+                />
+                <h2 className="editorial-title text-base font-bold tracking-widest text-[#000000]">
+                  M A I S O N  V I I I
+                </h2>
+                <p style={{ fontSize: '8px', letterSpacing: '0.12em', opacity: 0.8, textTransform: 'uppercase' }}>
+                  EL ARTE DE CELEBRAR LO EXTRAORDINARIO
+                </p>
+                <p style={{ fontSize: '9px', fontFamily: 'Courier Prime, monospace', marginTop: '1mm' }}>
+                  FOLIO: {printPayload.order.order_number}
+                </p>
+              </div>
+
+              <div className="ticket-divider-dashed" />
+
+              {/* Delivery & Schedule Details */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', gap: '4px' }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: '8px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Cliente</span>
+                  <span style={{ fontWeight: 'bold', display: 'block' }}>{printPayload.order.client_name}</span>
+                  <span style={{ display: 'block', opacity: 0.7 }}>{printPayload.order.client_phone}</span>
+                </div>
+                <div style={{ flex: 1, textAlign: 'right' }}>
+                  <span style={{ fontSize: '8px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Pago</span>
+                  <span style={{ fontWeight: 'bold', textTransform: 'uppercase', display: 'block' }}>
+                    {printPayload.order.payment_method === 'efectivo' && 'Efectivo'}
+                    {printPayload.order.payment_method === 'transferencia' && 'Transferencia'}
+                    {printPayload.order.payment_method === 'link_pago' && 'Tarjeta (Link)'}
+                  </span>
+                  <span style={{ display: 'block', fontSize: '8px', opacity: 0.8 }}>
+                    ({printPayload.order.payment_status.toUpperCase()})
+                  </span>
+                </div>
+              </div>
+
+              <div className="ticket-divider-solid" />
+
+              {/* Delivery Details */}
+              <div style={{ fontSize: '9.5px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div>
+                  <span style={{ fontSize: '8px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Entrega a Domicilio</span>
+                  <span style={{ display: 'block' }}>{printPayload.order.delivery_address}</span>
+                </div>
+                {printPayload.order.delivery_instructions && (
+                  <div style={{ marginTop: '2px' }}>
+                    <span style={{ fontSize: '8px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>Referencias</span>
+                    <span style={{ fontStyle: 'italic', opacity: 0.8, display: 'block' }}>{printPayload.order.delivery_instructions}</span>
+                  </div>
+                )}
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontWeight: 'bold', borderTop: '1px solid #f0f0f0', paddingTop: '2px' }}>
+                  <span>Fecha: {printPayload.order.delivery_date}</span>
+                  <span style={{ marginLeft: 'auto' }}>Horario: {printPayload.order.delivery_time_slot}</span>
+                </div>
+              </div>
+
+              <div className="ticket-divider-dashed" />
+
+              {/* Items Summary Table */}
+              <div>
+                <span style={{ fontSize: '8px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '2px' }}>Detalle del Pedido</span>
+                <table style={{ width: '100%', fontSize: '10px', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    {printPayload.items.map((item, idx) => {
+                      const variantsText = Object.keys(item.variant_choices || {}).length > 0
+                        ? Object.entries(item.variant_choices).map(([k, v]) => `${k}: ${v}`).join(', ')
+                        : '';
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                          <td style={{ padding: '3px 0', verticalAlign: 'top' }}>
+                            <strong>{item.quantity}x</strong> {item.product_name}
+                            {variantsText && <span style={{ display: 'block', fontSize: '8px', opacity: 0.6, fontStyle: 'italic', marginTop: '0.5px' }}>{variantsText}</span>}
+                          </td>
+                          <td style={{ padding: '3px 0', textAlign: 'right', verticalAlign: 'top', fontWeight: 'bold' }}>
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="ticket-divider-solid" />
+
+              {/* Pricing Totals */}
+              <div style={{ fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Subtotal</span>
+                  <span style={{ marginLeft: 'auto' }}>${printPayload.order.subtotal.toFixed(2)}</span>
+                </div>
+                {printPayload.order.loyalty_discount !== undefined && printPayload.order.loyalty_discount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#000000', fontWeight: 'bold' }}>
+                    <span>Descuento LE CLUB 8</span>
+                    <span style={{ marginLeft: 'auto' }}>-${printPayload.order.loyalty_discount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Envío ({printPayload.order.distance_km || 0} km)</span>
+                  <span style={{ marginLeft: 'auto' }}>${printPayload.order.delivery_fee.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 'bold', borderTop: '1px solid #000000', paddingTop: '3px', marginTop: '2px' }}>
+                  <span style={{ fontFamily: 'Cinzel, serif', letterSpacing: '0.05em' }}>TOTAL NETO</span>
+                  <span style={{ marginLeft: 'auto' }}>${printPayload.order.total.toFixed(2)} MXN</span>
+                </div>
+              </div>
+
+              {printPayload.order.notes && (
+                <div style={{ border: '1px solid #dddddd', padding: '3px', fontSize: '9px', fontStyle: 'italic', marginTop: '3px' }}>
+                  <strong>Observaciones:</strong> {printPayload.order.notes}
+                </div>
+              )}
+
+              {printPayload.order.loyalty_earned !== undefined && printPayload.order.loyalty_earned > 0 && (
+                <div style={{ marginTop: '2px', fontSize: '8.5px', textAlign: 'center', fontStyle: 'italic', opacity: 0.85 }}>
+                  ¡Acumulaste +${printPayload.order.loyalty_earned.toFixed(2)} MXN en LE CLUB 8!
+                </div>
+              )}
+
+              <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '5mm', opacity: 0.85 }}>
+                <p>¡Muchas gracias por elegir la distinción de Maison VIII! 🥐</p>
+                <p style={{ fontSize: '8px', opacity: 0.5, marginTop: '0.5mm' }}>Impreso el: {new Date().toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }

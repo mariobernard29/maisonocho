@@ -74,6 +74,8 @@ export default function POSPage() {
   const [distance, setDistance] = useState<number | null>(null);
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [calculatingDistance, setCalculatingDistance] = useState<boolean>(false);
+  const [googleKey, setGoogleKey] = useState<string>("");
+  const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
 
   // Schedule & Payment
   const [deliveryDate, setDeliveryDate] = useState<string>("");
@@ -189,6 +191,102 @@ export default function POSPage() {
       setUseLoyalty(false);
     }
   }, [clientPhone]);
+
+  // Reset distance when address changes to force recalculation
+  useEffect(() => {
+    setDistance(null);
+  }, [clientAddress]);
+
+  // Phase 1: Retrieve Google Maps API Key dynamically
+  useEffect(() => {
+    const envKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (envKey && !envKey.includes("YourGoogleMapsApiKey") && !envKey.includes("YourGoogleApiKey")) {
+      setGoogleKey(envKey);
+      return;
+    }
+
+    async function fetchKey() {
+      try {
+        const res = await fetch("/api/maps-key");
+        const data = await res.json();
+        if (data.success && data.apiKey && !data.apiKey.includes("YourGoogleMapsApiKey") && !data.apiKey.includes("YourGoogleApiKey")) {
+          setGoogleKey(data.apiKey);
+        }
+      } catch (err) {
+        console.error("Error fetching dynamic Google Maps Key in POS:", err);
+      }
+    }
+    fetchKey();
+  }, []);
+
+  // Phase 2: Load Google Maps places script dynamically once the key is resolved
+  useEffect(() => {
+    if (!googleKey) return;
+
+    const scriptId = "google-maps-places-script";
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+
+    const handleLoad = () => {
+      if ((window as any).google?.maps?.places) {
+        setScriptLoaded(true);
+      }
+    };
+
+    if (!script) {
+      script = document.createElement("script");
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleKey}&libraries=places&language=es`;
+      script.async = true;
+      script.defer = true;
+      script.addEventListener("load", handleLoad);
+      document.head.appendChild(script);
+    } else {
+      if ((window as any).google?.maps?.places) {
+        setScriptLoaded(true);
+      } else {
+        script.addEventListener("load", handleLoad);
+      }
+    }
+
+    return () => {
+      if (script) {
+        script.removeEventListener("load", handleLoad);
+      }
+    };
+  }, [googleKey]);
+
+  // Phase 3: Attach Autocomplete listener when deliveryMethod is domicilio and script has loaded
+  useEffect(() => {
+    if (deliveryMethod !== "domicilio" || !scriptLoaded) return;
+
+    const timer = setTimeout(() => {
+      const inputEl = document.getElementById("pos-address-input") as HTMLInputElement;
+      if (!inputEl) {
+        console.warn("Address input element not found in POS DOM yet.");
+        return;
+      }
+
+      try {
+        console.log("Initializing Google Places Autocomplete in POS...");
+        const autocomplete = new (window as any).google.maps.places.Autocomplete(inputEl, {
+          types: ["address"],
+          componentRestrictions: { country: "mx" }, // Restrict to Mexico since Los Mochis is in Mexico
+          fields: ["formatted_address", "geometry"]
+        });
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (place.formatted_address) {
+            setClientAddress(place.formatted_address);
+          }
+        });
+      } catch (err) {
+        console.error("Failed to initialize Autocomplete on POS input element:", err);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [deliveryMethod, scriptLoaded]);
 
   // Google Maps Distance calculation using existing API endpoint
   const handleCalculateDistance = async () => {
@@ -459,7 +557,8 @@ export default function POSPage() {
   };
 
   return (
-    <div className="no-print space-y-6 text-[#FAF8F5] pb-10">
+    <>
+      <div className="no-print space-y-6 text-[#FAF8F5] pb-10">
       
       {/* 2 Column Main Interface Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -543,9 +642,14 @@ export default function POSPage() {
                   </div>
                   <div className="p-4 space-y-2 flex-grow flex flex-col justify-between">
                     <div>
-                      <h3 className="font-semibold text-crema text-sm leading-snug">{p.name}</h3>
+                      <h3 className="font-semibold text-crema text-sm leading-snug flex items-center justify-between gap-2">
+                        <span>{p.name}</span>
+                        {p.description?.includes('[POS-ONLY]') && (
+                          <span className="text-[8px] bg-gold/10 text-gold px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Privado</span>
+                        )}
+                      </h3>
                       <p className="text-[10px] text-crema/50 line-clamp-2 mt-1 leading-normal font-light">
-                        {p.description}
+                        {p.description?.replace('[POS-ONLY]', '').trim()}
                       </p>
                     </div>
                     <div className="pt-2 flex justify-between items-center border-t border-crema/5">
@@ -769,6 +873,7 @@ export default function POSPage() {
                     <label className="text-[9px] text-crema/40 uppercase font-semibold">Dirección de Entrega</label>
                     <div className="flex gap-2">
                       <input
+                        id="pos-address-input"
                         type="text"
                         value={clientAddress}
                         onChange={(e) => setClientAddress(e.target.value)}
@@ -1055,6 +1160,7 @@ export default function POSPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* 3. PHYSICAL PRINT VIEWS AREA (Hidden from Screen, Visible on Print dialog) */}
       {printPayload && (
@@ -1263,6 +1369,6 @@ export default function POSPage() {
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }

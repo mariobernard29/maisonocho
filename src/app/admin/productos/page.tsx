@@ -30,6 +30,7 @@ export default function AdminProducts() {
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
   const [imageUrl, setImageUrl] = useState('/logos/logo_fodo_verde_500x500.png');
+  const [isPOSOnly, setIsPOSOnly] = useState(false);
   
   // Custom Variants builder
   const [variants, setVariants] = useState<ProductVariant[]>([]);
@@ -76,6 +77,7 @@ export default function AdminProducts() {
     setPrepTime(120);
     setIsAvailable(true);
     setIsFeatured(false);
+    setIsPOSOnly(false);
     setImageUrl('/logos/logo_fodo_verde_500x500.png');
     setVariants([]);
     setFormError('');
@@ -85,12 +87,13 @@ export default function AdminProducts() {
   const handleOpenEditModal = (prod: Product) => {
     setSelectedProduct(prod);
     setName(prod.name);
-    setDescription(prod.description);
+    setDescription(prod.description?.replace('[POS-ONLY]', '').trim() || '');
     setPrice(prod.price);
     setCategoryId(prod.category_id);
     setPrepTime(prod.prep_time_minutes);
     setIsAvailable(prod.is_available);
     setIsFeatured(prod.is_featured);
+    setIsPOSOnly(prod.description?.includes('[POS-ONLY]') || false);
     setImageUrl(prod.image_url);
     setVariants(prod.variants || []);
     setFormError('');
@@ -138,13 +141,18 @@ export default function AdminProducts() {
 
     setLoading(true);
     try {
+      let finalDescription = description.trim();
+      if (isPOSOnly) {
+        finalDescription = `${finalDescription}\n[POS-ONLY]`.trim();
+      }
+
       const prodSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const prodObj: Product = {
         id: selectedProduct?.id || generateUUID(),
         category_id: categoryId,
         name: name.trim(),
         slug: prodSlug,
-        description: description.trim(),
+        description: finalDescription,
         price,
         image_url: imageUrl,
         variants,
@@ -399,12 +407,19 @@ export default function AdminProducts() {
               <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between items-start gap-2">
-                    <h3 className="editorial-title text-lg font-semibold text-crema group-hover:text-gold transition-colors duration-300">
+                    <h3 className="editorial-title text-lg font-semibold text-crema group-hover:text-gold transition-colors duration-300 flex flex-wrap items-center gap-2">
                       {p.name}
+                      {p.description?.includes('[POS-ONLY]') && (
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-gold/15 border border-gold/30 text-[9px] uppercase tracking-wider font-bold text-gold">
+                          Solo POS
+                        </span>
+                      )}
                     </h3>
                     <span className="font-bold text-gold text-base">${p.price}</span>
                   </div>
-                  <p className="text-xs text-crema/60 leading-relaxed font-light line-clamp-3">{p.description}</p>
+                  <p className="text-xs text-crema/60 leading-relaxed font-light line-clamp-3">
+                    {p.description?.replace('[POS-ONLY]', '').trim()}
+                  </p>
                 </div>
 
                 <div className="border-t border-gold/10 pt-3.5 flex items-center justify-between text-[10px] text-crema/40">
@@ -531,6 +546,16 @@ export default function AdminProducts() {
                         className="rounded border-gold/20 text-gold focus:ring-gold"
                       />
                       <span>Destacar en Home</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer select-none text-crema">
+                      <input
+                        type="checkbox"
+                        checked={isPOSOnly}
+                        onChange={(e) => setIsPOSOnly(e.target.checked)}
+                        className="rounded border-gold/20 text-gold focus:ring-gold"
+                      />
+                      <span>Solo POS / Privado</span>
                     </label>
                   </div>
                 </div>

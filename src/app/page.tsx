@@ -21,7 +21,7 @@ export default function HomePage() {
           db.getProducts(),
           db.getSettings()
         ]);
-        setFeaturedProducts(prods.filter((p) => p.is_featured));
+        setFeaturedProducts(prods.filter((p) => p.is_featured && !p.description?.includes('[POS-ONLY]')));
         if (settings && typeof settings.show_prep_time !== "undefined") {
           setShowPrepTime(settings.show_prep_time === true || settings.show_prep_time === "true");
         }
