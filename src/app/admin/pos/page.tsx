@@ -426,11 +426,13 @@ export default function POSPage() {
       alert("Por favor agregue artículos al carrito antes de confirmar.");
       return;
     }
-    if (!clientName.trim() || !clientPhone.trim()) {
-      alert("Por favor ingrese el nombre y número de teléfono del cliente.");
-      return;
-    }
-    if (clientPhone.replace(/\D/g, "").length < 10) {
+    
+    // Fallback values for anonymous/general counter sales in POS
+    const finalPhone = clientPhone.trim() ? clientPhone.replace(/\D/g, "") : "0000000000";
+    const finalName = clientName.trim() ? clientName.trim() : "Venta Mostrador";
+
+    // Only validate phone length if a phone was actually entered
+    if (clientPhone.trim() && finalPhone.length < 10) {
       alert("El número de teléfono debe tener al menos 10 dígitos.");
       return;
     }
@@ -454,14 +456,14 @@ export default function POSPage() {
       const orderId = generateUUID();
       const orderNumber = `MO-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      // Register customer in LE CLUB 8 if selected
+      // Register customer in LE CLUB 8 if selected (only if phone was entered)
       let isLoyaltyActive = !!loyaltyProfile;
-      if (registerLoyalty && !loyaltyProfile && clientEmail.trim()) {
+      if (registerLoyalty && !loyaltyProfile && clientEmail.trim() && clientPhone.trim()) {
         try {
           const newCust = await db.signUpLoyalty(
             clientEmail.trim(),
-            clientPhone,
-            clientName,
+            finalPhone,
+            finalName,
             `MAISON_${Math.floor(1000 + Math.random() * 9000)}`
           );
           setLoyaltyProfile(newCust);
@@ -474,8 +476,8 @@ export default function POSPage() {
       const orderObj: Order = {
         id: orderId,
         order_number: orderNumber,
-        client_name: clientName,
-        client_phone: clientPhone,
+        client_name: finalName,
+        client_phone: finalPhone,
         delivery_address: deliveryMethod === "domicilio" ? clientAddress : "Recoge en Sucursal",
         distance_km: deliveryMethod === "domicilio" ? distance || 3.0 : 0,
         delivery_instructions: deliveryMethod === "domicilio" ? deliveryInstructions : "",
