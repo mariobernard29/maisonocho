@@ -18,6 +18,7 @@ import {
   User as UserIcon,
   AlertCircle,
   Award,
+  Store,
 } from "lucide-react";
 import { db } from "../../lib/supabase";
 import { Notification } from "../../types";
@@ -115,6 +116,7 @@ export default function AdminLayout({
 
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+    { name: "Punto de Venta", path: "/admin/pos", icon: Store },
     { name: "Pedidos", path: "/admin/pedidos", icon: ShoppingBag },
     { name: "Productos", path: "/admin/productos", icon: FolderHeart },
     { name: "Clientes", path: "/admin/clientes", icon: Users },
@@ -333,6 +335,7 @@ export default function AdminLayout({
           <div className="flex items-center gap-3">
             <h2 className="editorial-title text-xl text-gold font-light tracking-wide">
               {pathname === "/admin" && "Resumen de Negocios"}
+              {pathname === "/admin/pos" && "Punto de Venta"}
               {pathname === "/admin/pedidos" && "Panel de Pedidos"}
               {pathname === "/admin/productos" && "Administración de Catálogo"}
               {pathname === "/admin/clientes" && "Directorio de Clientes"}
