@@ -26,7 +26,8 @@ export default function Footer() {
               <li>Lunes a Sábado: 09:00 - 20:00</li>
               <li className="text-gold/80 font-normal">Martes: Cerrado</li>
               <li className="text-xs text-crema/50 mt-2">
-                *Pedidos especiales requieren mínimo 48 horas de anticipación.
+                *Pedidos especiales comunicate por WhatsApp con un mínimo de 48
+                horas de anticipación.
               </li>
             </ul>
           </div>
@@ -55,7 +56,8 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 text-xs font-light text-crema/45 gap-4">
           <p>
-            &copy; {new Date().getFullYear()} Maison Ocho. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} Maison Ocho. Todos los derechos
+            reservados.
           </p>
           <p className="mt-2 md:mt-0 italic tracking-wide text-crema/30 text-[10px] hover:text-gold transition-colors">
             Desarrollado por Bernard Digital Products

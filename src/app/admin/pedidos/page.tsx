@@ -1159,7 +1159,7 @@ export default function AdminOrders() {
 
               <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '4mm', borderTop: '1px dashed #000', paddingTop: '3mm', opacity: 0.95 }}>
                 <p style={{ fontWeight: 'bold' }}>📲 Contacto y Redes:</p>
-                <p style={{ marginTop: '1px', fontWeight: 'bold' }}>WhatsApp: 668 829 1104</p>
+                <p style={{ marginTop: '1px', fontWeight: 'bold' }}>WhatsApp: 668 242 1457</p>
                 <p style={{ marginTop: '1.5px', fontWeight: 'bold' }}>Instagram: @maison8.reposteriafina</p>
               </div>
 
