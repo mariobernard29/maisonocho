@@ -1157,7 +1157,13 @@ export default function AdminOrders() {
                 </div>
               )}
 
-              <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '5mm', opacity: 0.85 }}>
+              <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '4mm', borderTop: '1px dashed #000', paddingTop: '3mm', opacity: 0.95 }}>
+                <p style={{ fontWeight: 'bold' }}>📲 Contacto y Redes:</p>
+                <p style={{ marginTop: '1px', fontWeight: 'bold' }}>WhatsApp: 668 829 1104</p>
+                <p style={{ marginTop: '1.5px', fontWeight: 'bold' }}>Instagram: @maison8.reposteriafina</p>
+              </div>
+
+              <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '4mm', opacity: 0.85 }}>
                 <p>¡Muchas gracias por elegir la distinción de Maison VIII! 🥐</p>
                 <p style={{ fontSize: '8px', opacity: 0.5, marginTop: '0.5mm' }}>Impreso el: {new Date().toLocaleString()}</p>
               </div>

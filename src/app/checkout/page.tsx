@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [loyaltyProfile, setLoyaltyProfile] = useState<any>(null);
   const [useLoyalty, setUseLoyalty] = useState<boolean>(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<'domicilio' | 'sucursal'>('domicilio');
 
   // Logistics states
   const [zones, setZones] = useState<DeliveryZone[]>([]);
@@ -104,10 +105,12 @@ export default function CheckoutPage() {
     loadLogistics();
   }, [setValue]);
 
-  // Reset distance when address changes to force recalculation
+  // Reset distance when address changes to force recalculation (only if deliveryMethod is domicilio)
   useEffect(() => {
-    setDistance(null);
-  }, [watchedAddress]);
+    if (deliveryMethod === 'domicilio') {
+      setDistance(null);
+    }
+  }, [watchedAddress, deliveryMethod]);
 
   // Sync / Calculate shipping fee when distance updates
   useEffect(() => {
@@ -318,10 +321,10 @@ export default function CheckoutPage() {
         order_number: `MO-${Math.floor(1000 + Math.random() * 9000)}`,
         client_name: data.name,
         client_phone: data.phone,
-        delivery_address: data.address,
-        distance_km: distance || 3.0,
-        delivery_instructions: data.deliveryInstructions || '',
-        delivery_fee: shippingFee,
+        delivery_address: deliveryMethod === 'sucursal' ? 'Recoge en Sucursal' : data.address,
+        distance_km: deliveryMethod === 'sucursal' ? 0 : (distance !== null ? distance : 3.0),
+        delivery_instructions: deliveryMethod === 'sucursal' ? 'Recoge en Sucursal' : (data.deliveryInstructions || ''),
+        delivery_fee: deliveryMethod === 'sucursal' ? 0 : shippingFee,
         subtotal,
         total: finalTotal,
         status: 'pendiente' as const,
@@ -460,66 +463,128 @@ export default function CheckoutPage() {
                   </motion.div>
                 )}
 
-                {/* STEP 2: ADDRESS AUTOCOMPLETE */}
+                {/* STEP 2: ADDRESS AUTOCOMPLETE / DELIVERY METHOD */}
                 {step === 2 && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
                     <h3 className="editorial-title text-xl text-olive font-medium border-b border-olive/5 pb-2 flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-gold" />
-                      <span>Dirección de Entrega</span>
+                      <span>Método de Entrega</span>
                     </h3>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1.5">Ingresar Dirección</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            id="address-input"
-                            {...register('address')}
-                            className="flex-1 bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
-                            placeholder="Escribe tu calle, número y colonia..."
-                          />
-                          <button
-                            type="button"
-                            onClick={handleCalculateDistance}
-                            disabled={calculatingDistance || !watchedAddress}
-                            className="bg-olive text-crema px-5 rounded text-xs font-semibold tracking-wider hover:bg-gold transition-colors disabled:opacity-40 uppercase"
-                          >
-                            {calculatingDistance ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Calcular'}
-                          </button>
-                        </div>
-                        {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address.message}</p>}
-                      </div>
-
-                      {/* Map Display & Distance Card */}
-                      {distance !== null && (
-                        <div className="bg-beige/40 p-4 rounded border border-gold/15 space-y-3">
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-olive/75">Distancia calculada:</span>
-                            <span className="font-semibold text-olive">{distance} km</span>
-                          </div>
-                          <div className="flex justify-between items-center text-sm border-t border-olive/5 pt-2">
-                            <span className="text-olive/75">Tarifa de Envío:</span>
-                            <span className="font-bold text-olive">${shippingFee.toFixed(2)}</span>
-                          </div>
-                          <div className="text-[10px] text-gold/90 font-light flex items-center gap-1">
-                            <span>&bull;</span>
-                            <span>Ubicación de la Dark Kitchen oculta por seguridad. Costo calculado de forma precisa.</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Delivery Instructions */}
-                      <div>
-                        <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1.5">Instrucciones o Referencias de Entrega</label>
-                        <textarea
-                          {...register('deliveryInstructions')}
-                          rows={2}
-                          className="w-full bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
-                          placeholder="Ej: Casa de dos pisos, portón color chocolate, timbre de lado izquierdo..."
-                        />
-                      </div>
+                    {/* Delivery Method Toggle */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeliveryMethod('domicilio');
+                          if (watchedAddress === 'Recoge en Sucursal') {
+                            setValue('address', '');
+                          }
+                          setDistance(null);
+                          setShippingFee(0);
+                        }}
+                        className={`py-3 px-4 rounded border text-xs font-semibold uppercase tracking-wider transition-all text-center cursor-pointer ${
+                          deliveryMethod === 'domicilio'
+                            ? 'bg-olive border-olive text-crema shadow-lg font-medium'
+                            : 'bg-white border-olive/15 text-olive hover:bg-olive/5 font-light'
+                        }`}
+                      >
+                        Entrega a Domicilio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeliveryMethod('sucursal');
+                          setValue('address', 'Recoge en Sucursal');
+                          setValue('deliveryInstructions', 'Recoge en Sucursal');
+                          setDistance(0);
+                          setShippingFee(0);
+                        }}
+                        className={`py-3 px-4 rounded border text-xs font-semibold uppercase tracking-wider transition-all text-center cursor-pointer ${
+                          deliveryMethod === 'sucursal'
+                            ? 'bg-olive border-olive text-crema shadow-lg font-medium'
+                            : 'bg-white border-olive/15 text-olive hover:bg-olive/5 font-light'
+                        }`}
+                      >
+                        Recoge en Sucursal
+                      </button>
                     </div>
+
+                    {deliveryMethod === 'domicilio' ? (
+                      <div className="space-y-4 animate-fade-in-up">
+                        <div>
+                          <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1.5 font-medium">Ingresar Dirección</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              id="address-input"
+                              {...register('address')}
+                              className="flex-1 bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
+                              placeholder="Escribe tu calle, número y colonia..."
+                            />
+                            <button
+                              type="button"
+                              onClick={handleCalculateDistance}
+                              disabled={calculatingDistance || !watchedAddress}
+                              className="bg-olive text-crema px-5 rounded text-xs font-semibold tracking-wider hover:bg-gold transition-colors disabled:opacity-40 uppercase"
+                            >
+                              {calculatingDistance ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Calcular'}
+                            </button>
+                          </div>
+                          {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address.message}</p>}
+                        </div>
+
+                        {/* Map Display & Distance Card */}
+                        {distance !== null && (
+                          <div className="bg-beige/40 p-4 rounded border border-gold/15 space-y-3">
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-olive/75">Distancia calculada:</span>
+                              <span className="font-semibold text-olive">{distance} km</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm border-t border-olive/5 pt-2">
+                              <span className="text-olive/75">Tarifa de Envío:</span>
+                              <span className="font-bold text-olive">${shippingFee.toFixed(2)}</span>
+                            </div>
+                            <div className="text-[10px] text-gold/90 font-light flex items-center gap-1">
+                              <span>&bull;</span>
+                              <span>Ubicación de la Dark Kitchen oculta por seguridad. Costo calculado de forma precisa.</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Delivery Instructions */}
+                        <div>
+                          <label className="text-xs font-semibold tracking-wider text-olive uppercase block mb-1.5 font-medium">Instrucciones o Referencias de Entrega</label>
+                          <textarea
+                            {...register('deliveryInstructions')}
+                            rows={2}
+                            className="w-full bg-beige/30 border border-olive/15 rounded p-3 text-sm text-olive focus:outline-none focus:border-gold font-light"
+                            placeholder="Ej: Casa de dos pisos, portón color chocolate, timbre de lado izquierdo..."
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      /* SUCURSAL PICKUP SECTION */
+                      <div className="bg-[#1E2C1E]/5 p-6 rounded-lg border border-[#1E2C1E]/10 space-y-4 animate-fade-in-up">
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-5 h-5 text-gold shrink-0 mt-0.5" />
+                          <div className="space-y-2">
+                            <h4 className="font-bold text-olive text-sm uppercase tracking-wider">Recoge en Sucursal</h4>
+                            <p className="text-xs text-olive/80 font-light leading-relaxed">
+                              Tu pedido estará listo para recoger el día y hora seleccionados.
+                            </p>
+                            <p className="text-xs text-gold font-semibold pt-1">
+                              📍 La dirección exacta de la sucursal se te enviará automáticamente por WhatsApp una vez confirmado tu pedido.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-beige/40 p-4 rounded border border-gold/15 flex justify-between items-center text-sm">
+                          <span className="text-olive/75 font-medium">Costo de Envío:</span>
+                          <span className="font-bold text-emerald-700 text-base">$0.00 MXN</span>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
@@ -724,7 +789,7 @@ export default function CheckoutPage() {
                           alert('Por favor ingrese su teléfono.');
                           return;
                         }
-                        if (step === 2 && (!watch('address') || distance === null)) {
+                        if (step === 2 && deliveryMethod === 'domicilio' && (!watch('address') || distance === null)) {
                           alert('Por favor ingrese su dirección y calcule la distancia.');
                           return;
                         }
